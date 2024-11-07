@@ -21,16 +21,25 @@ module top_level
 
 
   logic [7:0]       note_value;
-  logic [31:0]      phase_value;
+  logic             gate_value;
+  logic             trigger_value;
   
-  note_decoder note_decoder_inst(.sw_in(sw), 
+  
+  note_decoder note_decoder_inst(.clk_in(clk_100mhz), 
+                                 .sw_in(sw), 
+                                 .rst_in(sys_rst),
                                  .btn_in(btn), 
-                                 .note_out(note_value)
+                                 .note_out(note_value),
+                                 .gate_out(gate_value),
+                                 .trigger_out(trigger_value)
                                 );
+
+
+  logic [31:0]      phase_value;
 
   phase_accumulator phase_accumulator_inst(.clk_in(clk_100mhz), 
                                            .rst_in(sys_rst), 
-                                           .note_in(note_value), 
+                                           .note_in(note_value),
                                            .phase_value(phase_value)
                                           );
                                         
@@ -71,7 +80,12 @@ module top_level
 
   assign spk_data_out_shifted = spk_data_out >> 2; // shift right to match 8-bit PWM resolution
   // TODO: instantiate a pwm module to drive spk_out based on the
-  pwm spk_pwm(.clk_in(clk_100mhz), .rst_in(sys_rst), .dc_in(spk_data_out_shifted), .sig_out(spk_out));
+  pwm spk_pwm(
+    .clk_in(clk_100mhz), 
+    .rst_in(sys_rst), 
+    .dc_in(spk_data_out_shifted), 
+    .gate_in(gate_value),
+    .sig_out(spk_out));
 
 
   // set both output channels equal to the same PWM signal!

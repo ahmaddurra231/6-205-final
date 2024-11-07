@@ -17,39 +17,49 @@ module note_decoder (
     // Note decoding logic
     always_comb begin
         // Default to no note
-        note_out = 8'd0;
-
-        // Check which button is pressed
-        case (btn_in)
-            4'b0010: begin
-                // Button 0 pressed - determine note based on sw_in
-                case (sw_in)
-                    16'b0000_0000_0000_0001: note_out = NOTE_C4;
-                    16'b0000_0000_0000_0010: note_out = NOTE_D4;
-                    16'b0000_0000_0000_0100: note_out = NOTE_E4;
-                    16'b0000_0000_0000_1000: note_out = NOTE_F4;
-                    16'b0000_0000_0001_0000: note_out = NOTE_G4;
-                    16'b0000_0000_0010_0000: note_out = NOTE_A4;
-                    16'b0000_0000_0100_0000: note_out = NOTE_B4;
-                    16'b0000_0000_1000_0000: note_out = NOTE_C5;
-                    default: note_out = 8'd0; // No valid switch combination
-                endcase
-            end
-            4'b0001: begin
-                // Button 1 pressed - use another set of switch mappings if needed
-                // (similar case structure for additional notes can be added here)
-                note_out = 8'd0; // Placeholder for future use
-            end
-            4'b0100: begin
-                // Button 2 pressed - more switch mappings can be added here
-                note_out = 8'd0; // Placeholder for future use
-            end
-            4'b1000: begin
-                // Button 3 pressed - more switch mappings can be added here
-                note_out = 8'd0; // Placeholder for future use
-            end
-            default: note_out = 8'd0; // No button pressed
+        case (sw_in)
+            16'b0000_0000_0000_0001: note_out = NOTE_C4;
+            16'b0000_0000_0000_0010: note_out = NOTE_D4;
+            16'b0000_0000_0000_0100: note_out = NOTE_E4;
+            16'b0000_0000_0000_1000: note_out = NOTE_F4;
+            16'b0000_0000_0001_0000: note_out = NOTE_G4;
+            16'b0000_0000_0010_0000: note_out = NOTE_A4;
+            16'b0000_0000_0100_0000: note_out = NOTE_B4;
+            16'b0000_0000_1000_0000: note_out = NOTE_C5;
+            default: note_out = 8'd0; // No valid switch combination
         endcase
+
+        // // Check which button is pressed
+        // case (btn_in)
+        //     4'b0010: begin
+        //         // Button 0 pressed - determine note based on sw_in
+        //         case (sw_in)
+        //             16'b0000_0000_0000_0001: note_out = NOTE_C4;
+        //             16'b0000_0000_0000_0010: note_out = NOTE_D4;
+        //             16'b0000_0000_0000_0100: note_out = NOTE_E4;
+        //             16'b0000_0000_0000_1000: note_out = NOTE_F4;
+        //             16'b0000_0000_0001_0000: note_out = NOTE_G4;
+        //             16'b0000_0000_0010_0000: note_out = NOTE_A4;
+        //             16'b0000_0000_0100_0000: note_out = NOTE_B4;
+        //             16'b0000_0000_1000_0000: note_out = NOTE_C5;
+        //             default: note_out = 8'd0; // No valid switch combination
+        //         endcase
+        //     end
+        //     4'b0001: begin
+        //         // Button 1 pressed - use another set of switch mappings if needed
+        //         // (similar case structure for additional notes can be added here)
+        //         note_out = 8'd0; // Placeholder for future use
+        //     end
+        //     4'b0100: begin
+        //         // Button 2 pressed - more switch mappings can be added here
+        //         note_out = 8'd0; // Placeholder for future use
+        //     end
+        //     4'b1000: begin
+        //         // Button 3 pressed - more switch mappings can be added here
+        //         note_out = 8'd0; // Placeholder for future use
+        //     end
+        //     default: note_out = 8'd0; // No button pressed
+        // endcase
     end
 
 endmodule

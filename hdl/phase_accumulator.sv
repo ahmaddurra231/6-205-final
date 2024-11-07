@@ -4,7 +4,7 @@
 module phase_accumulator (
     input logic clk_in,                  // System clock
     input logic rst_in,                  // Reset signal
-    input logic [7:0] note_value,     // Note frequency value from Note Decoder
+    input logic [7:0] note_in,     // Note frequency value from Note Decoder
     output logic [31:0] phase_value   // Accumulated phase value output
 );
   // Parameters for note values (e.g., MIDI note numbers or custom IDs)
@@ -23,7 +23,7 @@ module phase_accumulator (
 
   // Frequency to Phase Increment mapping (simplified)
   always_comb begin
-      case (note_value)
+      case (note_in)
           // value calculated based on a 100mhz clock.
           NOTE_C4: phase_increment = 32'd112404;  // Example value for C4
           NOTE_D4: phase_increment = 32'd126156;  // Example value for D4

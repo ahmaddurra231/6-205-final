@@ -6,7 +6,7 @@ module pwm(   input wire clk_in,
 	    logic [31:0] count;
 	    counter mc (.clk_in(clk_in),
 	                .rst_in(rst_in),
-	                .period_in(255),
+	                .period_in(256),
 	                .count_out(count));
 	    assign sig_out = count<dc_in; //very simple threshold check
 	endmodule

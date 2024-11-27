@@ -36,7 +36,7 @@ module top_level
                                            .valid_out(valid_out)
                                           );
 
-   logic [7:0]       note_value;
+   logic [2:0]       note_sel;
    logic             gate_value;
    logic             trigger_value;
 
@@ -46,88 +46,53 @@ module top_level
    note_decoder note_decoder_inst(.clk_in(clk_100mhz), 
                                  .rst_in(sys_rst),
                                  .touch_status_in(touch_status),
-                                 .note_out(note_value),
+                                 .note_sel(note_sel),
                                  .gate_out(gate_value),
                                  .trigger_out(trigger_value)
                                 );
 
 
-   logic [31:0]      phase_value;
+  //  logic [31:0]      phase_value;
 
-   phase_accumulator phase_accumulator_inst(.clk_in(clk_100mhz), 
-                                           .rst_in(sys_rst), 
-                                           .note_in(note_value),
-                                           .phase_value(phase_value)
-                                          );
+  //  phase_accumulator phase_accumulator_inst(.clk_in(clk_100mhz), 
+  //                                          .rst_in(sys_rst), 
+  //                                          .note_in(note_value),
+  //                                          .phase_value(phase_value)
+  //                                         );
                                         
    // BRAM Memory
    // We've configured this for you, but you'll need to hook up your address and data ports to the rest of your logic!
 
-   parameter BRAM_WIDTH = 8;
-   parameter BRAM_DEPTH = 256; // 40_000 samples = 5 seconds of samples at 8kHz sample
-   parameter ADDR_WIDTH = $clog2(BRAM_DEPTH);
+  //  parameter BRAM_WIDTH = 8;
+  //  parameter BRAM_DEPTH = 256; // 40_000 samples = 5 seconds of samples at 8kHz sample
+  //  parameter ADDR_WIDTH = $clog2(BRAM_DEPTH);
 
    // only using port a for reads: we only use dout
-   logic [BRAM_WIDTH-1:0]     spk_data_out;
-   logic [ADDR_WIDTH-1:0]     note_addr;
+  //  logic [BRAM_WIDTH-1:0]     spk_data_out;
+  //  logic [ADDR_WIDTH-1:0]     note_addr;
 
-   assign note_addr = phase_value[31:32 - ADDR_WIDTH];
-
-
-   xilinx_true_dual_port_read_first_2_clock_ram
-    #(.RAM_WIDTH(BRAM_WIDTH),
-      .RAM_DEPTH(BRAM_DEPTH),
-      .INIT_FILE("../util/sine_wave_256.hex")) audio_bram
-      (
-      // PORT A
-      .addra(note_addr),
-      .dina(0), // we only use port A for reads!
-      .clka(clk_100mhz),
-      .wea(1'b0), // read only
-      .ena(1'b1),
-      .rsta(sys_rst),
-      .regcea(1'b1),
-      .douta(spk_data_out)
-      );
+  //  assign note_addr = phase_value[31:32 - ADDR_WIDTH];
 
 
-   // PWM module
-   logic                      spk_out;
-   logic [BRAM_WIDTH-1:0]     spk_data_out_shifted;
+  //  xilinx_true_dual_port_read_first_2_clock_ram
+  //   #(.RAM_WIDTH(BRAM_WIDTH),
+  //     .RAM_DEPTH(BRAM_DEPTH),
+  //     .INIT_FILE("../util/sine_wave_256.hex")) audio_bram
+  //     (
+  //     // PORT A
+  //     .addra(note_addr),
+  //     .dina(0), // we only use port A for reads!
+  //     .clka(clk_100mhz),
+  //     .wea(1'b0), // read only
+  //     .ena(1'b1),
+  //     .rsta(sys_rst),
+  //     .regcea(1'b1),
+  //     .douta(spk_data_out)
+  //     );
 
-   assign spk_data_out_shifted = spk_data_out >> 2; // shift right to match 8-bit PWM resolution
-   // TODO: instantiate a pwm module to drive spk_out based on the
-   pwm spk_pwm(
-    .clk_in(clk_100mhz), 
-    .rst_in(sys_rst), 
-    .dc_in(spk_data_out_shifted), 
-    .gate_in(gate_value),
-    .sig_out(spk_out));
 
-
-   // set both output channels equal to the same PWM signal!
-   assign spkl = spk_out;
-   assign spkr = spk_out;
     
-    logic               sys_rst;
-    assign sys_rst = btn[0]; // button[0] to reset the system
-
-    //Note Selection
-    logic [2:0]         note_sel;      // 3-bit note selection signal (supports up to 8 notes)
-    logic               gate_value;    // Gate signal to control playback
-    logic               trigger_value; // Trigger signal for note on events
-
-    // Instantiate the Note Decoder
-    note_decoder note_decoder_inst (
-        .clk_in(clk_100mhz),
-        .sw_in(sw),
-        .rst_in(sys_rst),
-        .btn_in(btn),
-        .note_sel(note_sel),
-        .gate_out(gate_value),
-        .trigger_out(trigger_value)
-    );
-
+  
     //Sample Rate Generater
     logic               sample_tick; // Tick signal at 16,384 Hz
 

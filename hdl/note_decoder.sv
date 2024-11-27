@@ -12,14 +12,14 @@ module note_decoder (
 
     //NOTE TO SELF we could use these paramteres to claridy which note is being played
     // Parameters for note values (e.g., MIDI note numbers or custom IDs)
-    // parameter NOTE_C4 = 8'd60;  // C4 (Middle C)
-    // parameter NOTE_D4 = 8'd62;  // D4
-    // parameter NOTE_E4 = 8'd64;  // E4
-    // parameter NOTE_F4 = 8'd65;  // F4
-    // parameter NOTE_G4 = 8'd67;  // G4
-    // parameter NOTE_A4 = 8'd69;  // A4
-    // parameter NOTE_B4 = 8'd71;  // B4
-    // parameter NOTE_C5 = 8'd72;  // C5
+    parameter NOTE_C4 = 8'd60;  // C4 (Middle C)
+    parameter NOTE_D4 = 8'd62;  // D4
+    parameter NOTE_E4 = 8'd64;  // E4
+    parameter NOTE_F4 = 8'd65;  // F4
+    parameter NOTE_G4 = 8'd67;  // G4
+    parameter NOTE_A4 = 8'd69;  // A4
+    parameter NOTE_B4 = 8'd71;  // B4
+    parameter NOTE_C5 = 8'd72;  // C5
 
     
     logic gate_out_prev;
@@ -51,15 +51,15 @@ module note_decoder (
         // Default to no note
 
         case (touch_status_in)
-            12'b0000_0000_0001: note_out = NOTE_C4;
-            12'b0000_0000_0010: note_out = NOTE_D4;
-            12'b0000_0000_0100: note_out = NOTE_E4;
-            12'b0000_0000_1000: note_out = NOTE_F4;
-            12'b0000_0001_0000: note_out = NOTE_G4;
-            12'b0000_0010_0000: note_out = NOTE_A4;
-            12'b0000_0100_0000: note_out = NOTE_B4;
-            12'b0000_1000_0000: note_out = NOTE_C5;
-            default: note_out = 8'd0; // No valid switch combination
+            12'b0000_0000_0001: note_sel = 3'b000; // C4
+            12'b0000_0000_0010: note_sel = 3'b001; // C4
+            12'b0000_0000_0100: note_sel = 3'b010; // C4
+            12'b0000_0000_1000: note_sel = 3'b011; // C4
+            12'b0000_0001_0000: note_sel = 3'b100; // C4
+            12'b0000_0010_0000: note_sel = 3'b101; // C4
+            12'b0000_0100_0000: note_sel = 3'b110; // C4
+            12'b0000_1000_0000: note_sel = 3'b111; // C4
+            default: note_sel = 3'd0; // No valid switch combination
         endcase
 
     end

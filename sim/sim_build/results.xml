@@ -1,0 +1,8 @@
+<testsuites name="results">
+  <testsuite name="all" package="all">
+    <property name="random_seed" value="1731925708" />
+    <testcase name="test_i2c_controller" classname="test_i2c_controller" file="/Users/ahmaddurra/6205/final_project/sim/test_i2c_controller.py" lineno="110" time="2.1257710456848145" sim_time_ns="644010.001" ratio_time="302953.60467313783">
+      <failure message="Test failed with RANDOM_SEED=1731925708" />
+    </testcase>
+  </testsuite>
+</testsuites>

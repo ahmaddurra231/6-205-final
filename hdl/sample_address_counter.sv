@@ -11,7 +11,7 @@ module sample_address_counter #(
     input  wire gate_in,
     output reg [ADDR_WIDTH-1:0] sample_addr
 );
-    always_ff @(posedge clk_in or posedge rst_in) begin
+    always_ff @(posedge clk_in) begin
         if (rst_in || !gate_in) begin
             sample_addr <= 0;
         end else if (sample_tick) begin

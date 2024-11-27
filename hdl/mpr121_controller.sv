@@ -46,10 +46,6 @@ module mpr121_controller(
     READ_TOUCH_STATUS_FIRST_BYTE,
     START_READ_SECOND_BYTE,
     READ_TOUCH_STATUS_SECOND_BYTE, 
-    START_READ_ELE_DATA,
-    READ_ELE_DATA_FIRST_BYTE,
-    START_READ_ELE_DATA_2,
-    READ_ELE_DATA_SECOND_BYTE,
     STOP
   } state_t;
 
@@ -180,30 +176,7 @@ module mpr121_controller(
         end
         READ_TOUCH_STATUS_SECOND_BYTE: begin
           touch_status_out[11:8] <= data_byte_out[3:0];
-          state <= START_READ_ELE_DATA;
-          valid_out <= 1'b1;
-        end
-        START_READ_ELE_DATA: begin
-          start <= 1'b1;
-          rw <= 1'b1; // Read operation
-          command_byte_in <= 8'h04; // MPR121_ELE0_7 register
-          state <= AWAIT_VALID_OUT;
-          next_state <= READ_ELE_DATA_FIRST_BYTE;
-        end
-        READ_ELE_DATA_FIRST_BYTE: begin
-          led[13:6] <= data_byte_out;
-          state <= START_READ_ELE_DATA_2;
-        end
-        START_READ_ELE_DATA_2: begin
-          start <= 1'b1;
-          rw <= 1'b1; // Read operation
-          command_byte_in <= 8'h05; // MPR121_ELE8_11 register
-          state <= AWAIT_VALID_OUT;
-          next_state <= READ_ELE_DATA_SECOND_BYTE;
-        end
-        READ_ELE_DATA_SECOND_BYTE: begin
-          led[15:14] <= data_byte_out[1:0];
-          state <= START_READ_ELE_DATA;
+          state <= START_READ_TOUCH_STATUS;
           valid_out <= 1'b1;
         end
         STOP: begin

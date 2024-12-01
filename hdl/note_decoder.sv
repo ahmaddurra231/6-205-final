@@ -3,10 +3,8 @@ module note_decoder (
     input logic clk_in,         // Clock input
     input logic rst_in,         // Reset input
     input logic [11:0] touch_status_in, // 12 touch_status_in to determine the note
-    input logic [15:0] sw_in,    // 16 sw_in to determine the note
-    //output logic [7:0] note_out,   // Output note value (frequency index or ID)
-    output logic gate_out,
-    output logic trigger_out,
+    output logic [11:0] gate_out,
+    output logic [11:0] trigger_out,
     output logic [2:0] note_sel //up to 8 notes
 );
 
@@ -32,14 +30,14 @@ module note_decoder (
     //     .clean_out(key_press)
     // );
 
-    assign gate_out = |touch_status_in;
+    assign gate_out = touch_status_in;
     assign trigger_out = gate_out & ~gate_out_prev;
 
 
     
     always_ff @(posedge clk_in) begin
         if (rst_in) begin
-            gate_out_prev <= 1'b0;
+            gate_out_prev <= 12'b0;
         end else begin
             gate_out_prev <= gate_out;
         end

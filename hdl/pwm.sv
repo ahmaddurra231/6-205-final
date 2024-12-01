@@ -8,7 +8,7 @@ module pwm #(
     input wire clk_in,
     input wire rst_in,
     input wire [7:0] dc_in, 
-    input wire gate_in,
+    input wire [7:0] gate_in,
     output logic sig_out
 );
      
@@ -23,7 +23,7 @@ module pwm #(
     );
     
     // Generate PWM signal 
-    assign sig_out = gate_in && (count < dc_in);
+    assign sig_out = (|gate_in) && (count < dc_in);
     
 endmodule
 

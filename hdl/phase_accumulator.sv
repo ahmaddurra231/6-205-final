@@ -3,8 +3,8 @@
 module phase_accumulator (
     input logic clk_in,                  // System clock
     input logic rst_in,                  // Reset signal
-    input logic [7:0] note_in,     // Note frequency value from Note Decoder
-    output logic [31:0] phase_value   // Accumulated phase value output
+    input logic [7:0] gate_in,
+    output logic [31:0] phase_value [7:0]   // Accumulated phase value output
 );
   // Parameters for note values (e.g., MIDI note numbers or custom IDs)
   parameter NOTE_C4 = 8'd60;  // C4 (Middle C)
@@ -18,31 +18,39 @@ module phase_accumulator (
 
 
   // Phase increment value - Adjusted according to the note value
-  logic [31:0] phase_increment;
+  logic [31:0] phase_increment [7:0];
 
   // Frequency to Phase Increment mapping (simplified)
-  always_comb begin
-      case (note_in)
-          // value calculated based on a 100mhz clock.
-          NOTE_C4: phase_increment = 32'd112404;  // Example value for C4
-          NOTE_D4: phase_increment = 32'd126156;  // Example value for D4
-          NOTE_E4: phase_increment = 32'd141526;  // Example value for E4
-          NOTE_F4: phase_increment = 32'd149664;  // Example value for F4
-          NOTE_G4: phase_increment = 32'd167772;  // Example value for G4
-          NOTE_A4: phase_increment = 32'd188743;  // Example value for A4
-          NOTE_B4: phase_increment = 32'd211688;  // Example value for B4
-          NOTE_C5: phase_increment = 32'd224003;  // Example value for C5
-          default: phase_increment = 32'd0;     // No valid note selected
-      endcase
-  end
 
+  // Assign phase increment values based on gate_in position
+  always_comb begin
+    phase_increment[0] = (gate_in[0]) ? 32'd112404 : 32'd0;  // C4
+    phase_increment[1] = (gate_in[1]) ? 32'd126156 : 32'd0;  // D4
+    phase_increment[2] = (gate_in[2]) ? 32'd141526 : 32'd0;  // E4
+    phase_increment[3] = (gate_in[3]) ? 32'd149664 : 32'd0;  // F4
+    phase_increment[4] = (gate_in[4]) ? 32'd167772 : 32'd0;  // G4
+    phase_increment[5] = (gate_in[5]) ? 32'd188743 : 32'd0;  // A4
+    phase_increment[6] = (gate_in[6]) ? 32'd211688 : 32'd0;  // B4
+    phase_increment[7] = (gate_in[7]) ? 32'd224003 : 32'd0;  // C5
+  end
+  
   // Phase accumulator register
   always_ff @(posedge clk_in) begin
-      if (rst_in) begin
-          phase_value <= 32'd0; // Reset phase value to 0
-      end else begin
-          phase_value <= phase_value + phase_increment; // Accumulate phase
+    if (rst_in) begin
+      for (int i = 0; i < 8; i++) begin
+          phase_value[i] <= 32'd0; // Reset phase value for all notes
       end
+    end else begin
+      for (int i = 0; i < 8; i++) begin
+        if (gate_in[i]) begin
+            // Accumulate phase only for active notes
+            phase_value[i] <= phase_value[i] + phase_increment[i];
+        end else begin
+            // Reset phase value for inactive notes
+            phase_value[i] <= 32'd0;
+        end
+      end
+    end
   end
 
 endmodule

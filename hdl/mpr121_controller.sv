@@ -4,7 +4,7 @@ module mpr121_controller(
   inout logic sda,
   output logic scl_out,
   output logic [11:0] touch_status_out,
-  output logic [15:0] led,
+  output logic [13:0] led,
   output logic valid_out
 );
   logic start;
@@ -52,7 +52,7 @@ module mpr121_controller(
   state_t state;
   state_t next_state;
   logic [3:0] stop_byte; 
-  assign led[5:0] = touch_status_out[5:0];
+  assign led[7:0] = touch_status_out[7:0];
 
   assign peripheral_addr_in = 7'h5A; // MPR121 default I2C address
   always_ff @(posedge clk_in) begin

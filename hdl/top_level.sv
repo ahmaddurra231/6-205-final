@@ -129,8 +129,10 @@ module top_level
     //Sample Adress Counter
     parameter OUD_BRAM_DEPTH  = 8192; // Number of samples per note
     parameter OUD_ADDR_WIDTH  = 13; //$clog2(BRAM_DEPTH);  // Address width (13 bits for 8192 depth)
+    parameter OUD_BRAM_WIDTH = 16; // 16-bit sample width
 
     logic [OUD_ADDR_WIDTH-1:0] sample_addr; // Current sample address
+    
 
     sample_address_counter #(
     .BRAM_DEPTH(OUD_BRAM_DEPTH),
@@ -139,13 +141,14 @@ module top_level
     .clk_in(clk_100mhz),
     .rst_in(sys_rst),
     .sample_tick(sample_tick),
-    .gate_in(gate_value),
+    .led(led[12]),
+    .gate_in(gate_value[7:0]),
     .sample_addr(sample_addr)
 );
 
     //BRAM instances for each note 
     //NOTE TO SELF: Currently we have 4 notes, we should use generate for more efficient code to generate more notes
-    parameter OUD_BRAM_WIDTH = 16; // 16-bit sample width
+    
 
     localparam NUM_NOTES = 8; 
 
@@ -230,19 +233,37 @@ module top_level
     end
 
     //Prepare Data for PWM
-    logic [7:0] spk_data_out_shifted;
+    logic [PDM_WIDTH - 1:0] spk_data_out_multiplex;
+    logic [PDM_WIDTH - 1:0] spk_data_out_shifted;
 
-    // Convert 16-bit signed sample to 8-bit unsigned for PWM
-    assign spk_data_out_shifted = sw[0]? combined_sine_spk_data_out[7:0] >> 3
+    
+    assign spk_data_out_multiplex = sw[0]? combined_sine_spk_data_out[7:0] >> 3
                                        : selected_bram_data[15:8] + 8'd128; // Simple scaling
+    assign spk_data_out_shifted = spk_data_out_multiplex << PDM_SHIFT;
+                              
     assign led[15:13] = note_sel;
 
     //PWM Module Instantiation
     logic spk_out;
 
-    pwm #(
-        .PWM_RESOLUTION(256) // 8-bit resolution
-    ) spk_pwm (
+    // pwm #(
+    //     .PWM_RESOLUTION(256) // 8-bit resolution
+    // ) spk_pwm (
+    //     .clk_in(clk_100mhz),
+    //     .rst_in(sys_rst),
+    //     .dc_in(spk_data_out_shifted),
+    //     .gate_in(gate_value[7:0]),
+    //     .sig_out(spk_out)
+    // );
+
+    localparam PDM_RESOLUTION = 1024; // 8-bit resolution
+    localparam PDM_WIDTH = $clog2(PDM_RESOLUTION);
+    localparam SCALE_FACTOR = PDM_RESOLUTION / 256;
+    localparam PDM_SHIFT = $clog2(SCALE_FACTOR); 
+
+    pdm #(
+        .PDM_RESOLUTION(PDM_RESOLUTION) // 8-bit resolution
+    ) spk_pdm (
         .clk_in(clk_100mhz),
         .rst_in(sys_rst),
         .dc_in(spk_data_out_shifted),

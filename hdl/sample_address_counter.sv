@@ -9,6 +9,7 @@ module sample_address_counter #(
     input  wire rst_in,
     input  wire sample_tick,
     input  wire [7:0] gate_in,
+    output logic led,
     output reg [ADDR_WIDTH-1:0] sample_addr
 );
     always_ff @(posedge clk_in) begin
@@ -17,7 +18,9 @@ module sample_address_counter #(
         end else begin
             if (!(|gate_in)) begin
                 sample_addr <= 0;
+                led <= 1'b0;
             end else if (sample_tick) begin
+        
                 if (sample_addr == BRAM_DEPTH - 1) begin
                     sample_addr <= 0; // Loop back to start
                 end else begin

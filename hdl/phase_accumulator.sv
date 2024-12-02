@@ -24,14 +24,14 @@ module phase_accumulator (
 
   // Assign phase increment values based on gate_in position
   always_comb begin
-    phase_increment[0] = (gate_in[0]) ? 32'd112404 : 32'd0;  // C4
-    phase_increment[1] = (gate_in[1]) ? 32'd126156 : 32'd0;  // D4
-    phase_increment[2] = (gate_in[2]) ? 32'd141526 : 32'd0;  // E4
-    phase_increment[3] = (gate_in[3]) ? 32'd149664 : 32'd0;  // F4
-    phase_increment[4] = (gate_in[4]) ? 32'd167772 : 32'd0;  // G4
-    phase_increment[5] = (gate_in[5]) ? 32'd188743 : 32'd0;  // A4
-    phase_increment[6] = (gate_in[6]) ? 32'd211688 : 32'd0;  // B4
-    phase_increment[7] = (gate_in[7]) ? 32'd224003 : 32'd0;  // C5
+    phase_increment[0] = (gate_in[0]) ? 32'd11237 : 32'd0;  // C4 freq = 261.626 Hz
+    phase_increment[1] = (gate_in[1]) ? 32'd12613 : 32'd0;  // D4 freq = 293.665 Hz
+    phase_increment[2] = (gate_in[2]) ? 32'd14157 : 32'd0;  // E4 freq = 329.628 Hz
+    phase_increment[3] = (gate_in[3]) ? 32'd14999 : 32'd0;  // F4 freq = 349.228 Hz
+    phase_increment[4] = (gate_in[4]) ? 32'd16836 : 32'd0;  // G4 freq = 391.995 Hz
+    phase_increment[5] = (gate_in[5]) ? 32'd18898 : 32'd0;  // A4 freq = 440.000 Hz
+    phase_increment[6] = (gate_in[6]) ? 32'd21212 : 32'd0;  // B4 freq = 493.883 Hz
+    phase_increment[7] = (gate_in[7]) ? 32'd22473 : 32'd0;  // C5 freq = 523.251 Hz
   end
   
   // Phase accumulator register

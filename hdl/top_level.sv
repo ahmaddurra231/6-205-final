@@ -63,7 +63,7 @@ module top_level
    // BRAM Memory
    // We've configured this for you, but you'll need to hook up your address and data ports to the rest of your logic!
 
-   parameter SINE_BRAM_WIDTH = 8;
+   parameter SINE_BRAM_WIDTH = 16;
    parameter SINE_BRAM_DEPTH = 256; 
    parameter SINE_ADDR_WIDTH = $clog2(SINE_BRAM_DEPTH);
 
@@ -87,7 +87,7 @@ module top_level
    xilinx_true_dual_port_read_first_2_clock_ram
     #(.RAM_WIDTH(SINE_BRAM_WIDTH),
       .RAM_DEPTH(SINE_BRAM_DEPTH),
-      .INIT_FILE("../util/sine_wave_256.hex")) sine_audio_bram
+      .INIT_FILE("../util/sine_wave_256_uint16.hex")) sine_audio_bram
       (
       // PORT A
       .addra(sine_note_addr[0]),
@@ -112,7 +112,8 @@ module top_level
     // Combine the two voices
     assign combined_sine_spk_data_out = (num_voices <= 1)? sine_spk_data_out[0] : (sine_spk_data_out[0] + sine_spk_data_out[1]) >> 1;
     
-
+    
+    //////////////OUD/////////////////////
 
     //Sample Rate Generater
     logic               sample_tick; // Tick signal at 16,384 Hz
@@ -237,9 +238,9 @@ module top_level
     logic [PDM_WIDTH - 1:0] spk_data_out_shifted;
 
     
-    assign spk_data_out_multiplex = sw[0]? combined_sine_spk_data_out[7:0] >> 3
+    assign spk_data_out_shifted = sw[0]? combined_sine_spk_data_out[SINE_BRAM_WIDTH-1 -: PDM_WIDTH] >> 1
                                        : selected_bram_data[15:8] + 8'd128; // Simple scaling
-    assign spk_data_out_shifted = spk_data_out_multiplex << PDM_SHIFT;
+    
                               
     assign led[15:13] = note_sel;
 
@@ -256,13 +257,12 @@ module top_level
     //     .sig_out(spk_out)
     // );
 
-    localparam PDM_RESOLUTION = 1024; // 8-bit resolution
+    localparam PDM_RESOLUTION = 65536; 
     localparam PDM_WIDTH = $clog2(PDM_RESOLUTION);
-    localparam SCALE_FACTOR = PDM_RESOLUTION / 256;
-    localparam PDM_SHIFT = $clog2(SCALE_FACTOR); 
+    
 
     pdm #(
-        .PDM_RESOLUTION(PDM_RESOLUTION) // 8-bit resolution
+        .PDM_RESOLUTION(PDM_RESOLUTION) // 16-bit resolution
     ) spk_pdm (
         .clk_in(clk_100mhz),
         .rst_in(sys_rst),

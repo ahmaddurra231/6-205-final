@@ -238,7 +238,7 @@ module top_level
     logic [PDM_WIDTH - 1:0] spk_data_out_shifted;
 
     
-    assign spk_data_out_shifted = sw[0]? combined_sine_spk_data_out[SINE_BRAM_WIDTH-1 -: PDM_WIDTH] >> 1
+    assign spk_data_out_shifted = sw[0]? combined_sine_spk_data_out[SINE_BRAM_WIDTH-1 -: PDM_WIDTH] >> 2
                                        : selected_bram_data[15:8] + 8'd128; // Simple scaling
     
                               

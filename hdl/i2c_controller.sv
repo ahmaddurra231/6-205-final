@@ -90,7 +90,6 @@ typedef enum logic [3:0] {
   AWAIT_ACK,
   READ_ACK,
   PROCESS_ACK,
-  ACK,
   DATA,
   READ,
   STOP, 

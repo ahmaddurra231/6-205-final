@@ -9,7 +9,7 @@ module counter(     input wire clk_in,
             count_out == period_in - 1? 0: count_out +1;
   end
   always_ff @(posedge clk_in)begin
-    count_out = count[31:0];
+    count_out <= count[31:0];
   end
 
     

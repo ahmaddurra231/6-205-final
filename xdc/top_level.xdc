@@ -7,7 +7,7 @@ create_clock -add -name gclk -period 10.000 -waveform {0 4} [get_ports {clk_100m
 set_property CFGBVS VCCO [current_design]
 set_property CONFIG_VOLTAGE 3.3 [current_design]
 
-
+ 
 # CAMERA BOARD v2
 
 
@@ -146,8 +146,8 @@ set_property -dict {PACKAGE_PIN E5  IOSTANDARD LVCMOS33} [ get_ports "ss1_c[6]"]
 #set_property -dict {PACKAGE_PIN J15 IOSTANDARD LVCMOS33}  [ get_ports "pmodb[3]" ]
 #set_property -dict {PACKAGE_PIN H16 IOSTANDARD LVCMOS33}  [ get_ports "pmodb[4]" ]
 
-#set_property -dict {PACKAGE_PIN H17 IOSTANDARD LVCMOS33 PULLTYPE PULLUP}  [ get_ports "pmodb_sda" ]
-#set_property -dict {PACKAGE_PIN K16 IOSTANDARD LVCMOS33 PULLTYPE PULLUP}  [ get_ports "pmodb_scl" ]
+set_property -dict {PACKAGE_PIN H17 IOSTANDARD LVCMOS33 PULLTYPE PULLUP}  [ get_ports "pmodb_sda" ]
+set_property -dict {PACKAGE_PIN K16 IOSTANDARD LVCMOS33 PULLTYPE PULLUP}  [ get_ports "pmodb_scl" ]
 ##set_property -dict {PACKAGE_PIN H17 IOSTANDARD LVCMOS33}  [ get_ports "pmodb[5]" ]
 ##set_property -dict {PACKAGE_PIN K16 IOSTANDARD LVCMOS33}  [ get_ports "pmodb[6]" ]
 

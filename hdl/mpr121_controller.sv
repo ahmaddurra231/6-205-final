@@ -1,7 +1,7 @@
 module mpr121_controller(
   input logic clk_in,
   input logic rst_in,
-  inout logic sda,
+  input logic sda,
   output logic scl_out,
   output logic [11:0] touch_status_out,
   output logic [13:0] led,

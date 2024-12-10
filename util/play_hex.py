@@ -1,7 +1,7 @@
 import numpy as np
 import sounddevice as sd
 
-hex_filename = "output_hex_files/note_1_wave_16ksps.hex"
+hex_filename = "oud_waveform_256.hex"
 amplitude = 32767
 offset = 0
 sampling_rate = 16384

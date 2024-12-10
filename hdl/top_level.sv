@@ -23,33 +23,84 @@ module top_level
    assign sys_rst = btn[0];
 
 
-   logic [11:0]       touch_status;
-   logic              valid_out;
+   reg [11:0]       touch_status;
+   //logic              valid_out; //uncomment for capacitors
    
-
-   mpr121_controller mpr121_controller_inst(.clk_in(clk_100mhz), 
-                                           .rst_in(sys_rst), 
-                                           .sda(pmodb_sda),
-                                           .scl_out(pmodb_scl),
-                                           .led(led[13:0]),
-                                           .touch_status_out(touch_status),
-                                           .valid_out(valid_out)
-                                          );
+// uncomment for capacitors
+//    mpr121_controller mpr121_controller_inst(.clk_in(clk_100mhz), 
+//                                            .rst_in(sys_rst), 
+//                                            .sda(pmodb_sda),
+//                                            .scl_out(pmodb_scl),
+//                                            .led(led[13:0]),
+//                                            .touch_status_out(touch_status),
+//                                            .valid_out(valid_out)
+//                                           ); 
 
    logic [2:0]       note_sel;
    logic [11:0]      gate_value;
-   logic [11:0]      trigger_value;
-
-  //  assign led[11:0] = touch_status;
-  
+   logic [11:0]      trigger_value;  
   
    note_decoder note_decoder_inst(.clk_in(clk_100mhz), 
                                  .rst_in(sys_rst),
                                  .touch_status_in(touch_status),
+                                 .switches(touch_status),
                                  .note_sel(note_sel),
                                  .gate_out(gate_value),
                                  .trigger_out(trigger_value)
                                 );
+
+    // Generate an ADSR instance per note
+    localparam NUM_NOTES = 8;
+
+    // Declare arrays for ADSR envelopes and idle signals for each note
+    //logic [15:0] adsr_envelope [NUM_NOTES-1:0]; 
+    //logic adsr_idle [NUM_NOTES-1:0];
+
+    // Generate one ADSR instance per note
+    // genvar i;
+    // generate
+    //     for (i = 0; i < NUM_NOTES; i = i + 1) begin : ADSR_BLOCK
+    //         adsr #(
+    //             .CLK_FREQ(100_000_000),    
+    //             .T_ATTACK_MS(10),          
+    //             .T_DECAY_MS(50),           
+    //             .T_SUSTAIN_MS(200),        
+    //             .T_RELEASE_MS(50),         
+    //             .A_MAX(32'h8000_0000),     
+    //             .A_SUS(32'h0800_0000)     
+    //         ) adsr_inst (
+    //             .clk_in(clk_100mhz),
+    //             .rst_in(sys_rst),
+    //             .hold(gate_value[i]),       // Hold is true if this note is playing
+    //             .start(trigger_value[i]),   // Start this ADSR when the note is triggered
+    //             .envelope(adsr_envelope[i]),
+    //             .adsr_idle(adsr_idle[i])
+    //         );
+    //     end
+    // endgenerate
+
+
+    //ADD ADSR HERE
+    logic  [15:0] adsr_envelope; 
+    logic adsr_idle; 
+
+    adsr #(
+        .CLK_FREQ(100_000_000),    
+        .T_ATTACK_MS(500),        
+        .T_DECAY_MS(500),        
+        .T_SUSTAIN_MS(200),     
+        .T_RELEASE_MS(50),     
+        .A_MAX(32'h8000_0000),   
+        .A_SUS(32'h0800_0000)    
+    ) adsr_inst (
+        .clk_in(clk_100mhz),
+        .rst_in(sys_rst),
+        .hold(|gate_value),
+        .start(|trigger_value), 
+        .envelope(adsr_envelope),
+        .adsr_idle(adsr_idle)
+    );
+
 
 
    logic [31:0]      phase_value[7:0];
@@ -61,17 +112,16 @@ module top_level
                                           );
                                         
    // BRAM Memory
-   // We've configured this for you, but you'll need to hook up your address and data ports to the rest of your logic!
 
    parameter SINE_BRAM_WIDTH = 16;
    parameter SINE_BRAM_DEPTH = 256; 
    parameter SINE_ADDR_WIDTH = $clog2(SINE_BRAM_DEPTH);
 
    // only using port a for reads: we only use dout
-   logic [SINE_BRAM_WIDTH-1:0]     sine_spk_data_out[1:0];
-   logic [SINE_BRAM_WIDTH:0]     combined_sine_spk_data_out;
-   logic [SINE_ADDR_WIDTH-1:0]     sine_note_addr [1:0];
-   logic [1:0]  num_voices;
+   logic [SINE_BRAM_WIDTH-1:0]     sine_spk_data_out[3:0]; //changed this to hanlde 4 notes
+   logic [SINE_ADDR_WIDTH-1:0]     sine_note_addr [3:0]; //changed this to handle 4 notes in parallel
+   logic [2:0]  num_voices;
+   logic [7:0] active_voices;
    
 
    address_generator address_generator_inst(.clk_in(clk_100mhz), 
@@ -79,10 +129,27 @@ module top_level
                                            .phase_in(phase_value),
                                            .gate_in(gate_value[7:0]),
                                            .addr_out(sine_note_addr),
-                                           .num_voices(num_voices)
+                                           .num_voices(num_voices),
+                                           .active_voices(active_voices)
                                           );
 
 
+    // Register the sine_note_addr for BRAM addressing
+    logic [SINE_ADDR_WIDTH-1:0] sine_note_addr_reg [3:0];
+
+    always_ff @(posedge clk_100mhz ) begin
+    if (sys_rst) begin
+        sine_note_addr_reg[0] <= 0;
+        sine_note_addr_reg[1] <= 0;
+        sine_note_addr_reg[2] <= 0;
+        sine_note_addr_reg[3] <= 0;
+    end else begin
+        sine_note_addr_reg[0] <= sine_note_addr[0];
+        sine_note_addr_reg[1] <= sine_note_addr[1];
+        sine_note_addr_reg[2] <= sine_note_addr[2];
+        sine_note_addr_reg[3] <= sine_note_addr[3];
+    end
+    end
 
    xilinx_true_dual_port_read_first_2_clock_ram
     #(.RAM_WIDTH(SINE_BRAM_WIDTH),
@@ -90,7 +157,7 @@ module top_level
       .INIT_FILE("../util/sine_wave_256_uint16.hex")) sine_audio_bram
       (
       // PORT A
-      .addra(sine_note_addr[0]),
+      .addra(sine_note_addr_reg[0]),
       .dina(0), // we only use port A for reads!
       .clka(clk_100mhz),
       .wea(1'b0), // read only
@@ -99,7 +166,7 @@ module top_level
       .regcea(1'b1),
       .douta(sine_spk_data_out[0]),
       // PORT B
-      .addrb(sine_note_addr[1]),
+      .addrb(sine_note_addr_reg[1]),
       .dinb(0),
       .clkb(clk_100mhz),
       .web(1'b0),
@@ -109,14 +176,68 @@ module top_level
       .doutb(sine_spk_data_out[1])
       );
 
-    // Combine the two voices
-    assign combined_sine_spk_data_out = (num_voices <= 1)? sine_spk_data_out[0] : (sine_spk_data_out[0] + sine_spk_data_out[1]) >> 1;
     
-    
-    //////////////OUD/////////////////////
+xilinx_true_dual_port_read_first_2_clock_ram #(
+    .RAM_WIDTH(SINE_BRAM_WIDTH),
+    .RAM_DEPTH(SINE_BRAM_DEPTH),
+    .INIT_FILE("../util/sine_wave_256_uint16.hex")
+) sine_audio_bram1 (
+    // PORT A
+    .addra(sine_note_addr_reg[2]),
+    .dina(0),
+    .clka(clk_100mhz),
+    .wea(1'b0),
+    .ena(1'b1),
+    .rsta(sys_rst),
+    .regcea(1'b1),
+    .douta(sine_spk_data_out[2]),
+    // PORT B
+    .addrb(sine_note_addr_reg[3]),
+    .dinb(0),
+    .clkb(clk_100mhz),
+    .web(1'b0),
+    .enb(1'b1),
+    .rstb(sys_rst),
+    .regceb(1'b1),
+    .doutb(sine_spk_data_out[3])
+);
+
+    // handling 4 notes with adsr_envelope
+    reg [SINE_BRAM_WIDTH:0] average0, average1, combined_sine_spk_data_out;
+
+    reg [PDM_WIDTH - 1:0] spk_data_out_shifted;
+    reg [15:0] modulated_combined_sine_data; // ADSR-modulated combined sine data
+    reg [31:0] temp;
+
+    always_ff @(posedge clk_100mhz ) begin
+        if (sys_rst) begin
+            average0 <= 0;
+            average1 <= 0;
+            combined_sine_spk_data_out <= 0;
+
+            temp <= 0;
+            modulated_combined_sine_data <= 0;
+            spk_data_out_shifted <= 0;
+        end else begin
+            // Averaging Logic
+            average0 <= (sine_spk_data_out[0] + sine_spk_data_out[1]) >> 1;
+            average1 <= (sine_spk_data_out[2] + sine_spk_data_out[3]) >> 1;
+            combined_sine_spk_data_out <= (average0 + average1) >> 1;
+            //combined_sine_spk_data_out <= (average0 + average1) >> 1;
+            
+            // ADSR Modulation and PDM Data Preparation
+            temp <= adsr_envelope * (combined_sine_spk_data_out >>> 1);
+            modulated_combined_sine_data <= temp >>> 16;
+            spk_data_out_shifted <= modulated_combined_sine_data;
+        end
+    end
+
+
+
+    //THE REST OF THIS IS OUD PLAYBACK - I DON NOT THINK WE NEED IT ANYMORE - BUT LET'S DISCUSS THIS
 
     //Sample Rate Generater
-    logic               sample_tick; // Tick signal at 16,384 Hz
+    logic sample_tick; // Tick signal at 16,384 Hz
 
     sample_rate_counter #(
         .SAMPLE_RATE(16384),
@@ -147,12 +268,7 @@ module top_level
     .sample_addr(sample_addr)
 );
 
-    //BRAM instances for each note 
-    //NOTE TO SELF: Currently we have 4 notes, we should use generate for more efficient code to generate more notes
     
-
-    localparam NUM_NOTES = 8; 
-
     // Wires to hold data output from each BRAM
     logic [OUD_BRAM_WIDTH-1:0] bram_data_out [NUM_NOTES-1:0];
 
@@ -233,16 +349,10 @@ module top_level
         endcase
     end
 
-    //Prepare Data for PWM
-    logic [PDM_WIDTH - 1:0] spk_data_out_multiplex;
-    logic [PDM_WIDTH - 1:0] spk_data_out_shifted;
+    always_ff @( posedge clk_100mhz ) begin
+        touch_status <= sw[11:0];
+    end
 
-    
-    assign spk_data_out_shifted = sw[0]? combined_sine_spk_data_out[SINE_BRAM_WIDTH-1 -: PDM_WIDTH] >> 2
-                                       : selected_bram_data[15:8] + 8'd128; // Simple scaling
-    
-                              
-    assign led[15:13] = note_sel;
 
     //PWM Module Instantiation
     logic spk_out;
@@ -259,10 +369,11 @@ module top_level
 
     localparam PDM_RESOLUTION = 65536; 
     localparam PDM_WIDTH = $clog2(PDM_RESOLUTION);
-    
+    localparam SCALE_FACTOR = PDM_RESOLUTION / 256;
+    localparam PDM_SHIFT = $clog2(SCALE_FACTOR); 
 
     pdm #(
-        .PDM_RESOLUTION(PDM_RESOLUTION) // 16-bit resolution
+        .PDM_RESOLUTION(PDM_RESOLUTION) // 8-bit resolution
     ) spk_pdm (
         .clk_in(clk_100mhz),
         .rst_in(sys_rst),

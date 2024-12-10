@@ -3,6 +3,7 @@ module note_decoder (
     input logic clk_in,         // Clock input
     input logic rst_in,         // Reset input
     input logic [11:0] touch_status_in, // 12 touch_status_in to determine the note
+    input logic [7:0] switches, 
     output logic [11:0] gate_out,
     output logic [11:0] trigger_out,
     output logic [2:0] note_sel //up to 8 notes
@@ -20,19 +21,39 @@ module note_decoder (
     parameter NOTE_C5 = 8'd72;  // C5
 
     
-    logic gate_out_prev;
+    logic [11:0] gate_out_prev;
 
+    //YOU CAN COMMENT OUT THE DEBOUNCER LOGIC - IT'S ONLY USED FOR THE SWITCHES
 
-    // debouncer key_press_debounce(
-    //     .clk_in(clk_in),
-    //     .rst_in(rst_in),
-    //     .dirty_in(btn_in[1]),
-    //     .clean_out(key_press)
-    // );
+    logic [11:0] debounced; 
+    logic [11:0] debounced_prev;
+
+    genvar i;
+    generate
+        for (i = 0; i < 9; i = i + 1) begin : debounce_loop
+            debouncer debounce_inst(
+                .clk_in(clk_in),
+                .rst_in(rst_in),
+                .dirty_in(switches[i]),
+                .clean_out(debounced[i])
+            );
+        end
+    endgenerate
 
     assign gate_out = touch_status_in;
-    assign trigger_out = gate_out & ~gate_out_prev;
+     
+    //assign trigger_out = gate_out & ~gate_out_prev;
+    assign trigger_out = debounced & ~debounced_prev;
 
+
+
+     always_ff @(posedge clk_in) begin
+        if (rst_in) begin
+            debounced_prev <= 12'b0;
+        end else begin
+            debounced_prev <= debounced;
+        end
+    end
 
     
     always_ff @(posedge clk_in) begin

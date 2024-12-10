@@ -4,7 +4,6 @@ module phase_accumulator (
     input logic clk_in,                  // System clock
     input logic rst_in,                  // Reset signal
     input logic [7:0] gate_in,
-    input logic [7:0] trigger_in,
     output logic [31:0] phase_value [7:0]   // Accumulated phase value output
 );
   // Parameters for note values (e.g., MIDI note numbers or custom IDs)
@@ -42,19 +41,13 @@ module phase_accumulator (
           phase_value[i] <= 32'd0; // Reset phase value for all notes
       end
     end else begin
-      if (|trigger_in) begin
-        for (int i = 0; i < 8; i++) begin
-            phase_value[i] <= 32'd0; // Reset phase value for all notes
-        end
-      end else begin
-        for (int i = 0; i < 8; i++) begin
-          if (gate_in[i]) begin
-              // Accumulate phase only for active notes
-              phase_value[i] <= phase_value[i] + phase_increment[i];
-          end else begin
-              // Reset phase value for inactive notes
-              phase_value[i] <= 32'd0;
-          end
+      for (int i = 0; i < 8; i++) begin
+        if (gate_in[i]) begin
+            // Accumulate phase only for active notes
+            phase_value[i] <= phase_value[i] + phase_increment[i];
+        end else begin
+            // Reset phase value for inactive notes
+            phase_value[i] <= 32'd0;
         end
       end
     end

@@ -48,7 +48,7 @@ module address_generator #(
           active_voices[idx] <= 1'b1; // Mark the voice as active
           
           //if (num_voices < 4) begin
-            addr_out[num_voices] <= phase_in[idx][31:(32 - ADDR_WIDTH)];
+            addr_out[idx] <= phase_in[idx][31:(32 - ADDR_WIDTH)]; //replaced num_voices with idx
             num_voices <= num_voices + 1; //I can make this output the number of voices played
           //end
 

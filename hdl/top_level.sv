@@ -11,6 +11,7 @@ module top_level
    output logic [2:0]  rgb0,
    output logic [2:0]  rgb1,
    output logic [15:0] led
+   //output logic [7:0] analyzer
    );
 
    // shut up those RGBs
@@ -23,7 +24,7 @@ module top_level
    assign sys_rst = btn[0];
 
 
-   reg [11:0]       touch_status;
+   logic [11:0]       touch_status;
    //logic              valid_out; //uncomment for capacitors
    
 // uncomment for capacitors
@@ -52,54 +53,54 @@ module top_level
     // Generate an ADSR instance per note
     localparam NUM_NOTES = 8;
 
-    // Declare arrays for ADSR envelopes and idle signals for each note
-    //logic [15:0] adsr_envelope [NUM_NOTES-1:0]; 
-    //logic adsr_idle [NUM_NOTES-1:0];
+    //Declare arrays for ADSR envelopes and idle signals for each note
+    logic [15:0] adsr_envelope [NUM_NOTES-1:0]; 
+    logic adsr_idle [NUM_NOTES-1:0];
 
-    // Generate one ADSR instance per note
-    // genvar i;
-    // generate
-    //     for (i = 0; i < NUM_NOTES; i = i + 1) begin : ADSR_BLOCK
-    //         adsr #(
-    //             .CLK_FREQ(100_000_000),    
-    //             .T_ATTACK_MS(10),          
-    //             .T_DECAY_MS(50),           
-    //             .T_SUSTAIN_MS(200),        
-    //             .T_RELEASE_MS(50),         
-    //             .A_MAX(32'h8000_0000),     
-    //             .A_SUS(32'h0800_0000)     
-    //         ) adsr_inst (
-    //             .clk_in(clk_100mhz),
-    //             .rst_in(sys_rst),
-    //             .hold(gate_value[i]),       // Hold is true if this note is playing
-    //             .start(trigger_value[i]),   // Start this ADSR when the note is triggered
-    //             .envelope(adsr_envelope[i]),
-    //             .adsr_idle(adsr_idle[i])
-    //         );
-    //     end
-    // endgenerate
+    //Generate one ADSR instance per note
+    genvar i;
+    generate
+        for (i = 0; i < NUM_NOTES; i = i + 1) begin : ADSR_BLOCK
+            adsr #(
+                .CLK_FREQ(100_000_000),    
+                .T_ATTACK_MS(500),          
+                .T_DECAY_MS(500),           
+                .T_SUSTAIN_MS(200),        
+                .T_RELEASE_MS(50),         
+                .A_MAX(32'h8888_0000),     
+                .A_SUS(32'h0800_0000)     
+            ) adsr_inst (
+                .clk_in(clk_100mhz),
+                .rst_in(sys_rst),
+                .hold(gate_value[i]),       // Hold is true if this note is playing
+                .start(trigger_value[i]),   // Start this ADSR when the note is triggered
+                .envelope(adsr_envelope[i]),
+                .adsr_idle(adsr_idle[i])
+            );
+        end
+    endgenerate
 
 
-    //ADD ADSR HERE
-    logic  [15:0] adsr_envelope; 
-    logic adsr_idle; 
+    // //ADD ADSR HERE
+    // logic  [15:0] adsr_envelope; 
+    // logic adsr_idle; 
 
-    adsr #(
-        .CLK_FREQ(100_000_000),    
-        .T_ATTACK_MS(500),        
-        .T_DECAY_MS(500),        
-        .T_SUSTAIN_MS(200),     
-        .T_RELEASE_MS(50),     
-        .A_MAX(32'h8000_0000),   
-        .A_SUS(32'h0800_0000)    
-    ) adsr_inst (
-        .clk_in(clk_100mhz),
-        .rst_in(sys_rst),
-        .hold(|gate_value),
-        .start(|trigger_value), 
-        .envelope(adsr_envelope),
-        .adsr_idle(adsr_idle)
-    );
+    // adsr #(
+    //     .CLK_FREQ(100_000_000),    
+    //     .T_ATTACK_MS(500),        
+    //     .T_DECAY_MS(500),        
+    //     .T_SUSTAIN_MS(200),     
+    //     .T_RELEASE_MS(50),     
+    //     .A_MAX(32'h8000_0000),   
+    //     .A_SUS(32'h0800_0000)    
+    // ) adsr_inst (
+    //     .clk_in(clk_100mhz),
+    //     .rst_in(sys_rst),
+    //     .hold(|gate_value),
+    //     .start(|trigger_value), 
+    //     .envelope(adsr_envelope),
+    //     .adsr_idle(adsr_idle)
+    // );
 
 
 
@@ -118,10 +119,12 @@ module top_level
    parameter SINE_ADDR_WIDTH = $clog2(SINE_BRAM_DEPTH);
 
    // only using port a for reads: we only use dout
-   logic [SINE_BRAM_WIDTH-1:0]     sine_spk_data_out[3:0]; //changed this to hanlde 4 notes
-   logic [SINE_ADDR_WIDTH-1:0]     sine_note_addr [3:0]; //changed this to handle 4 notes in parallel
-   logic [2:0]  num_voices;
+   logic [SINE_BRAM_WIDTH-1:0]     sine_spk_data_out[7:0]; //changed this to hanlde 4 notes
+   logic [SINE_ADDR_WIDTH-1:0]     sine_note_addr [7:0]; //changed this to handle 4 notes in parallel
+   logic [3:0]  num_voices;
    logic [7:0] active_voices;
+
+   assign led[7:0] = active_voices;
    
 
    address_generator address_generator_inst(.clk_in(clk_100mhz), 
@@ -134,20 +137,30 @@ module top_level
                                           );
 
 
-    // Register the sine_note_addr for BRAM addressing
-    logic [SINE_ADDR_WIDTH-1:0] sine_note_addr_reg [3:0];
+    // logicister the sine_note_addr for BRAM addressing
+    logic [SINE_ADDR_WIDTH-1:0] sine_note_addr_logic [7:0];
 
     always_ff @(posedge clk_100mhz ) begin
     if (sys_rst) begin
-        sine_note_addr_reg[0] <= 0;
-        sine_note_addr_reg[1] <= 0;
-        sine_note_addr_reg[2] <= 0;
-        sine_note_addr_reg[3] <= 0;
+        sine_note_addr_logic[0] <= 0;
+        sine_note_addr_logic[1] <= 0;
+        sine_note_addr_logic[2] <= 0;
+        sine_note_addr_logic[3] <= 0;
+        sine_note_addr_logic[4] <= 0;
+        sine_note_addr_logic[5] <= 0;
+        sine_note_addr_logic[6] <= 0;
+        sine_note_addr_logic[7] <= 0;
+ 
     end else begin
-        sine_note_addr_reg[0] <= sine_note_addr[0];
-        sine_note_addr_reg[1] <= sine_note_addr[1];
-        sine_note_addr_reg[2] <= sine_note_addr[2];
-        sine_note_addr_reg[3] <= sine_note_addr[3];
+        sine_note_addr_logic[0] <= sine_note_addr[0];
+        sine_note_addr_logic[1] <= sine_note_addr[1];
+        sine_note_addr_logic[2] <= sine_note_addr[2];
+        sine_note_addr_logic[3] <= sine_note_addr[3];
+        sine_note_addr_logic[4] <= sine_note_addr[4];
+        sine_note_addr_logic[5] <= sine_note_addr[5];
+        sine_note_addr_logic[6] <= sine_note_addr[6];
+        sine_note_addr_logic[7] <= sine_note_addr[7];
+
     end
     end
 
@@ -157,7 +170,7 @@ module top_level
       .INIT_FILE("../util/sine_wave_256_uint16.hex")) sine_audio_bram
       (
       // PORT A
-      .addra(sine_note_addr_reg[0]),
+      .addra(sine_note_addr_logic[0]),
       .dina(0), // we only use port A for reads!
       .clka(clk_100mhz),
       .wea(1'b0), // read only
@@ -166,7 +179,7 @@ module top_level
       .regcea(1'b1),
       .douta(sine_spk_data_out[0]),
       // PORT B
-      .addrb(sine_note_addr_reg[1]),
+      .addrb(sine_note_addr_logic[1]),
       .dinb(0),
       .clkb(clk_100mhz),
       .web(1'b0),
@@ -183,7 +196,7 @@ xilinx_true_dual_port_read_first_2_clock_ram #(
     .INIT_FILE("../util/sine_wave_256_uint16.hex")
 ) sine_audio_bram1 (
     // PORT A
-    .addra(sine_note_addr_reg[2]),
+    .addra(sine_note_addr_logic[2]),
     .dina(0),
     .clka(clk_100mhz),
     .wea(1'b0),
@@ -192,7 +205,7 @@ xilinx_true_dual_port_read_first_2_clock_ram #(
     .regcea(1'b1),
     .douta(sine_spk_data_out[2]),
     // PORT B
-    .addrb(sine_note_addr_reg[3]),
+    .addrb(sine_note_addr_logic[3]),
     .dinb(0),
     .clkb(clk_100mhz),
     .web(1'b0),
@@ -202,35 +215,228 @@ xilinx_true_dual_port_read_first_2_clock_ram #(
     .doutb(sine_spk_data_out[3])
 );
 
-    // handling 4 notes with adsr_envelope
-    reg [SINE_BRAM_WIDTH:0] average0, average1, combined_sine_spk_data_out;
+xilinx_true_dual_port_read_first_2_clock_ram #(
+    .RAM_WIDTH(SINE_BRAM_WIDTH),
+    .RAM_DEPTH(SINE_BRAM_DEPTH),
+    .INIT_FILE("../util/sine_wave_256_uint16.hex")
+) sine_audio_bram2 (
+    // PORT A
+    .addra(sine_note_addr_logic[4]),
+    .dina(0),
+    .clka(clk_100mhz),
+    .wea(1'b0),
+    .ena(1'b1),
+    .rsta(sys_rst),
+    .regcea(1'b1),
+    .douta(sine_spk_data_out[4]),
+    // PORT B
+    .addrb(sine_note_addr_logic[5]),
+    .dinb(0),
+    .clkb(clk_100mhz),
+    .web(1'b0),
+    .enb(1'b1),
+    .rstb(sys_rst),
+    .regceb(1'b1),
+    .doutb(sine_spk_data_out[5])
+);
 
-    reg [PDM_WIDTH - 1:0] spk_data_out_shifted;
-    reg [15:0] modulated_combined_sine_data; // ADSR-modulated combined sine data
-    reg [31:0] temp;
+xilinx_true_dual_port_read_first_2_clock_ram #(
+    .RAM_WIDTH(SINE_BRAM_WIDTH),
+    .RAM_DEPTH(SINE_BRAM_DEPTH),
+    .INIT_FILE("../util/sine_wave_256_uint16.hex")
+) sine_audio_bram3 (
+    // PORT A
+    .addra(sine_note_addr_logic[6]),
+    .dina(0),
+    .clka(clk_100mhz),
+    .wea(1'b0),
+    .ena(1'b1),
+    .rsta(sys_rst),
+    .regcea(1'b1),
+    .douta(sine_spk_data_out[6]),
+    // PORT B
+    .addrb(sine_note_addr_logic[7]),
+    .dinb(0),
+    .clkb(clk_100mhz),
+    .web(1'b0),
+    .enb(1'b1),
+    .rstb(sys_rst),
+    .regceb(1'b1),
+    .doutb(sine_spk_data_out[7])
+);
+
+        logic [3:0] note_count;
+        logic [16:0] voice_values [0:7]; 
+        logic [31:0] temp_0, temp_1, temp_2, temp_3, temp_4, temp_5, temp_6, temp_7;
+        logic [16:0] enveloped_sample;
+    
+    //combine up to 4 notes with adsr envelope
+    always_comb begin
+        note_count = 0;
+
+        // Initialize array to avoid unintended latches
+        for (int j = 0; j < 8; j++) begin
+            voice_values[j] = 0;
+        end
+
+        enveloped_sample = 0;
+        //temp = 0;
+
+        for (int i = 0; i < NUM_NOTES; i++) note_count = active_voices[i] + note_count; //counts how many notes are played
+        // Iterate through all 8 notes
+        if (active_voices[0]) begin
+            temp_0 = sine_spk_data_out[0] * adsr_envelope[0];
+            voice_values[0] = temp_0 >> 16;
+        end 
+
+        if (active_voices[1]) begin
+            temp_1 = sine_spk_data_out[1] * adsr_envelope[1];
+            voice_values[1] = temp_1 >> 16;
+        end 
+
+        if (active_voices[2]) begin
+            temp_2 = sine_spk_data_out[2] * adsr_envelope[2];
+            voice_values[2] = temp_2 >> 16;
+        end 
+
+        if (active_voices[3]) begin
+            temp_3 = sine_spk_data_out[3] * adsr_envelope[3];
+            voice_values[3] = temp_3 >> 16;
+        end 
+
+        if (active_voices[4]) begin
+            temp_4 = sine_spk_data_out[4] * adsr_envelope[4];
+            voice_values[4] = temp_4 >> 16;
+        end 
+
+        if (active_voices[5]) begin
+            temp_5 = sine_spk_data_out[5] * adsr_envelope[5];
+            voice_values[5] = temp_5 >> 16;
+        end 
+
+        if (active_voices[6]) begin
+            temp_6 = sine_spk_data_out[6] * adsr_envelope[6];
+            voice_values[6] = temp_6 >> 16;
+        end 
+
+        if (active_voices[7]) begin
+            temp_7 = sine_spk_data_out[7] * adsr_envelope[7];
+            voice_values[7] = temp_7 >> 16;
+        end 
+
+        // //unwrap this for loop because I am over writing temp
+        // for (int idx = 0; idx < NUM_NOTES; idx++) begin
+        //     if (active_voices[idx]) begin
+        //         temp = sine_spk_data_out[idx] * adsr_envelope[idx];
+        //         enveloped_sample = temp >>> 16;
+        //         voice_values[idx] = enveloped_sample;
+        //     end
+        // end
+ 
+    end
+
+
+// //NEW: Handling multiple notes with adsr envelope for each
+// logic [18:0] sums;
+// logic [26:0] pre_division;
+// logic [15:0] out;
+// logic [3:0] active_count;
+
+// logic [18:0] pipe [3:0];
+// logic [2:0] counts [3:0];
+
+
+
+// always_ff @(posedge clk) begin
+//     for(integer i = 0; i < 4; i=i+1) begin
+//         pipe[i] <= pipe[i-1] + (active_voices[i])? (sine_spk_data_out[i] * adsr_envelope[i]) >>> 16: 0;
+//         counts[i] <= counts[i-1] + active[i];
+//     end
+
+//     sums <= pipe[7]
+//     active_count <= count[7]
+
+
+//     case(active_count):
+//         4'd0: pre_division <= sums * 0;
+//         4'd1: pre_division <= sums * 255;
+//         4'd2: pre_division <= sums * 128;
+//         4'd3: pre_division <= sums * 85;
+//         4'd4: pre_division <= sums * 64;
+//         // 4'd5: pre_division <= sums * 51;
+//         // 4'd6: pre_division <= sums * 42;
+//         // 4'd7: pre_division <= sums * 36;
+//         // 4'd8: pre_division <= sums * 32;
+//         default: pre_division <= 0;
+//     endcase
+
+//     out <= pre_division >>> 8
+
+// end
+
+
+    // handling 4 notes with adsr_envelope
+    logic [SINE_BRAM_WIDTH:0] average0, average1,average2,average3;
+    logic [SINE_BRAM_WIDTH-1:0] combined_sine_spk_data_out;
+
+    logic [PDM_WIDTH - 1:0] spk_data_out_shifted;
+    logic [15:0] modulated_combined_sine_data; // ADSR-modulated combined sine data
+    logic [26:0] multiplied_sum;
+    logic [19:0] sum;
 
     always_ff @(posedge clk_100mhz ) begin
         if (sys_rst) begin
             average0 <= 0;
             average1 <= 0;
+            average2 <= 0;
+            average3 <= 0;
             combined_sine_spk_data_out <= 0;
 
-            temp <= 0;
             modulated_combined_sine_data <= 0;
             spk_data_out_shifted <= 0;
         end else begin
             // Averaging Logic
-            average0 <= (sine_spk_data_out[0] + sine_spk_data_out[1]) >> 1;
-            average1 <= (sine_spk_data_out[2] + sine_spk_data_out[3]) >> 1;
-            combined_sine_spk_data_out <= (average0 + average1) >> 1;
-            //combined_sine_spk_data_out <= (average0 + average1) >> 1;
+            //sum all             
+            //divide by number
+            average0 <= voice_values[0] + voice_values[1]; 
+            average1 <= voice_values[2] + voice_values[3];
+            average2 <= voice_values[4] + voice_values[5];
+            average3 <= voice_values[6] + voice_values[7];
+            sum <= (average0 + average1 + average2 + average3) ; //OVERFLOW ? how do I take the highest ?
+            
+            //divide by number of voices played: 
+            //combined_sine_spk_data_out <= (average0 + average1 + average2 + average3) >> note_count;
+            // try to do this with num_voices
+            case(note_count) //replace with note_count
+                4'd0: multiplied_sum <= sum * 0;
+                4'd1: multiplied_sum <= sum * 255;
+                4'd2: multiplied_sum <= sum * 128;
+                4'd3: multiplied_sum <= sum * 85;
+                4'd4: multiplied_sum <= sum * 64;
+                4'd5: multiplied_sum <= sum * 51;
+                4'd6: multiplied_sum <= sum * 42;
+                4'd7: multiplied_sum <= sum * 36;
+                4'd8: multiplied_sum <= sum * 32;
+                default: multiplied_sum <= 0;
+            endcase
+
+            combined_sine_spk_data_out <= multiplied_sum >>> 8;
+
+
+            // average0 <= (sine_spk_data_out[0] + sine_spk_data_out[1]) >> 1;
+            // average1 <= (sine_spk_data_out[2] + sine_spk_data_out[3]) >> 1;
+            // combined_sine_spk_data_out <= (average0 + average1) >> 1;
             
             // ADSR Modulation and PDM Data Preparation
-            temp <= adsr_envelope * (combined_sine_spk_data_out >>> 1);
-            modulated_combined_sine_data <= temp >>> 16;
-            spk_data_out_shifted <= modulated_combined_sine_data;
+            //temp <= adsr_envelope * (combined_sine_spk_data_out >>> 1);
+            //modulated_combined_sine_data <= temp >>> 16;
+            //spk_data_out_shifted <= modulated_combined_sine_data;
+
+            spk_data_out_shifted <= combined_sine_spk_data_out;
         end
     end
+
+    //assign analyzer[7] = multiplied_sum[0];
 
 
 
@@ -350,7 +556,7 @@ xilinx_true_dual_port_read_first_2_clock_ram #(
     end
 
     always_ff @( posedge clk_100mhz ) begin
-        touch_status <= sw[11:0];
+        touch_status <= sw[7:0];
     end
 
 

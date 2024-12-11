@@ -24,18 +24,18 @@ module top_level
    assign sys_rst = btn[0];
 
 
-   logic [23:0]       touch_status;
-   logic              valid_out; //uncomment for capacitors
+   logic [11:0]       touch_status;
+   //logic              valid_out; //uncomment for capacitors
    
 // uncomment for capacitors
-   mpr121_controller mpr121_controller_inst(.clk_in(clk_100mhz), 
-                                           .rst_in(sys_rst), 
-                                           .sda(pmodb_sda),
-                                           .scl_out(pmodb_scl),
-                                           .led(),
-                                           .touch_status_out(touch_status),
-                                           .valid_out(valid_out)
-                                          ); 
+//    mpr121_controller mpr121_controller_inst(.clk_in(clk_100mhz), 
+//                                            .rst_in(sys_rst), 
+//                                            .sda(pmodb_sda),
+//                                            .scl_out(pmodb_scl),
+//                                            .led(led[13:0]),
+//                                            .touch_status_out(touch_status),
+//                                            .valid_out(valid_out)
+//                                           ); 
 
    logic [2:0]       note_sel;
    logic [11:0]      gate_value;
@@ -67,7 +67,7 @@ module top_level
                 .T_DECAY_MS(500),           
                 .T_SUSTAIN_MS(200),        
                 .T_RELEASE_MS(50),         
-                .A_MAX(32'h8888_0000),     
+                .A_MAX(32'h8000_0000),     
                 .A_SUS(32'h0800_0000)     
             ) adsr_inst (
                 .clk_in(clk_100mhz),
@@ -79,28 +79,6 @@ module top_level
             );
         end
     endgenerate
-
-
-    // //ADD ADSR HERE
-    // logic  [15:0] adsr_envelope; 
-    // logic adsr_idle; 
-
-    // adsr #(
-    //     .CLK_FREQ(100_000_000),    
-    //     .T_ATTACK_MS(500),        
-    //     .T_DECAY_MS(500),        
-    //     .T_SUSTAIN_MS(200),     
-    //     .T_RELEASE_MS(50),     
-    //     .A_MAX(32'h8000_0000),   
-    //     .A_SUS(32'h0800_0000)    
-    // ) adsr_inst (
-    //     .clk_in(clk_100mhz),
-    //     .rst_in(sys_rst),
-    //     .hold(|gate_value),
-    //     .start(|trigger_value), 
-    //     .envelope(adsr_envelope),
-    //     .adsr_idle(adsr_idle)
-    // );
 
 
 
@@ -124,7 +102,7 @@ module top_level
    logic [3:0]  num_voices;
    logic [7:0] active_voices;
 
-   assign led = touch_status[23:8];
+   assign led[7:0] = active_voices;
    
 
    address_generator address_generator_inst(.clk_in(clk_100mhz), 
@@ -163,6 +141,9 @@ module top_level
 
     end
     end
+
+    // add a case - connect it ot a switch 
+    // based on the switch value set the waveform 
 
    xilinx_true_dual_port_read_first_2_clock_ram
     #(.RAM_WIDTH(SINE_BRAM_WIDTH),
@@ -266,113 +247,56 @@ xilinx_true_dual_port_read_first_2_clock_ram #(
 );
 
         logic [3:0] note_count;
-        logic [16:0] voice_values [0:7]; 
+        logic [32:0] voice_values [0:7]; //change 32 back to 16
         logic [31:0] temp_0, temp_1, temp_2, temp_3, temp_4, temp_5, temp_6, temp_7;
-        logic [16:0] enveloped_sample;
     
-    //combine up to 4 notes with adsr envelope
+    //combine up to 8 notes with adsr envelope
+
     always_comb begin
         note_count = 0;
+        for (int i = 0; i < 8; i++) note_count = active_voices[i] + note_count;
+    end 
 
-        // Initialize array to avoid unintended latches
-        for (int j = 0; j < 8; j++) begin
-            voice_values[j] = 0;
+    always_ff @(posedge clk_100mhz)begin
+        
+
+        if (active_voices[0]) begin
+            voice_values[0] <= (sine_spk_data_out[0] * adsr_envelope[0]) >> 16;
         end
 
-        enveloped_sample = 0;
-        //temp = 0;
-
-        for (int i = 0; i < NUM_NOTES; i++) note_count = active_voices[i] + note_count; //counts how many notes are played
-        // Iterate through all 8 notes
-        if (active_voices[0]) begin
-            temp_0 = sine_spk_data_out[0] * adsr_envelope[0];
-            voice_values[0] = temp_0 >> 16;
-        end 
-
         if (active_voices[1]) begin
-            temp_1 = sine_spk_data_out[1] * adsr_envelope[1];
-            voice_values[1] = temp_1 >> 16;
+            voice_values[1] <= (sine_spk_data_out[1] * adsr_envelope[1]) >> 16;
         end 
 
         if (active_voices[2]) begin
-            temp_2 = sine_spk_data_out[2] * adsr_envelope[2];
-            voice_values[2] = temp_2 >> 16;
+            voice_values[2] <= (sine_spk_data_out[2] * adsr_envelope[2]) >> 16;
         end 
 
         if (active_voices[3]) begin
-            temp_3 = sine_spk_data_out[3] * adsr_envelope[3];
-            voice_values[3] = temp_3 >> 16;
+            voice_values[3] <= (sine_spk_data_out[3] * adsr_envelope[3]) >> 16;
         end 
 
         if (active_voices[4]) begin
-            temp_4 = sine_spk_data_out[4] * adsr_envelope[4];
-            voice_values[4] = temp_4 >> 16;
+            voice_values[4] <= (sine_spk_data_out[4] * adsr_envelope[4]) >> 16;
         end 
 
         if (active_voices[5]) begin
-            temp_5 = sine_spk_data_out[5] * adsr_envelope[5];
-            voice_values[5] = temp_5 >> 16;
+            voice_values[5] <= (sine_spk_data_out[5] * adsr_envelope[5]) >> 16;
         end 
 
         if (active_voices[6]) begin
-            temp_6 = sine_spk_data_out[6] * adsr_envelope[6];
-            voice_values[6] = temp_6 >> 16;
+            voice_values[6] <= (sine_spk_data_out[6] * adsr_envelope[6]) >> 16;
         end 
 
         if (active_voices[7]) begin
-            temp_7 = sine_spk_data_out[7] * adsr_envelope[7];
-            voice_values[7] = temp_7 >> 16;
+            voice_values[7] <= (sine_spk_data_out[7] * adsr_envelope[7]) >> 16;
         end 
 
-        // //unwrap this for loop because I am over writing temp
-        // for (int idx = 0; idx < NUM_NOTES; idx++) begin
-        //     if (active_voices[idx]) begin
-        //         temp = sine_spk_data_out[idx] * adsr_envelope[idx];
-        //         enveloped_sample = temp >>> 16;
-        //         voice_values[idx] = enveloped_sample;
-        //     end
-        // end
- 
-    end
 
+    end 
+    
 
-// //NEW: Handling multiple notes with adsr envelope for each
-// logic [18:0] sums;
-// logic [26:0] pre_division;
-// logic [15:0] out;
-// logic [3:0] active_count;
-
-// logic [18:0] pipe [3:0];
-// logic [2:0] counts [3:0];
-
-
-
-// always_ff @(posedge clk) begin
-//     for(integer i = 0; i < 4; i=i+1) begin
-//         pipe[i] <= pipe[i-1] + (active_voices[i])? (sine_spk_data_out[i] * adsr_envelope[i]) >>> 16: 0;
-//         counts[i] <= counts[i-1] + active[i];
-//     end
-
-//     sums <= pipe[7]
-//     active_count <= count[7]
-
-
-//     case(active_count):
-//         4'd0: pre_division <= sums * 0;
-//         4'd1: pre_division <= sums * 255;
-//         4'd2: pre_division <= sums * 128;
-//         4'd3: pre_division <= sums * 85;
-//         4'd4: pre_division <= sums * 64;
-//         // 4'd5: pre_division <= sums * 51;
-//         // 4'd6: pre_division <= sums * 42;
-//         // 4'd7: pre_division <= sums * 36;
-//         // 4'd8: pre_division <= sums * 32;
-//         default: pre_division <= 0;
-//     endcase
-
-//     out <= pre_division >>> 8
-
-// end
+assign led[15:12] = note_count;
 
 
     // handling 4 notes with adsr_envelope
@@ -380,9 +304,9 @@ xilinx_true_dual_port_read_first_2_clock_ram #(
     logic [SINE_BRAM_WIDTH-1:0] combined_sine_spk_data_out;
 
     logic [PDM_WIDTH - 1:0] spk_data_out_shifted;
-    logic [15:0] modulated_combined_sine_data; // ADSR-modulated combined sine data
-    logic [26:0] multiplied_sum;
-    logic [19:0] sum;
+    logic [32:0] modulated_combined_sine_data; // ADSR-modulated combined sine data --> change it back to 15 
+    logic [32:0] multiplied_sum; //change it back to 26 ? 
+    logic [32:0] sum; //change it back to 19
 
     always_ff @(posedge clk_100mhz ) begin
         if (sys_rst) begin
@@ -420,7 +344,7 @@ xilinx_true_dual_port_read_first_2_clock_ram #(
                 default: multiplied_sum <= 0;
             endcase
 
-            combined_sine_spk_data_out <= multiplied_sum >>> 8;
+            combined_sine_spk_data_out <= multiplied_sum >> 8;
 
 
             // average0 <= (sine_spk_data_out[0] + sine_spk_data_out[1]) >> 1;
@@ -462,28 +386,116 @@ xilinx_true_dual_port_read_first_2_clock_ram #(
     logic [OUD_ADDR_WIDTH-1:0] sample_addr; // Current sample address
     
 
-    sample_address_counter #(
-    .BRAM_DEPTH(OUD_BRAM_DEPTH),
-    .ADDR_WIDTH(OUD_ADDR_WIDTH)
-) sample_address_counter_inst (
-    .clk_in(clk_100mhz),
-    .rst_in(sys_rst),
-    .sample_tick(sample_tick),
-    .led(led[12]),
-    .gate_in(gate_value[7:0]),
-    .sample_addr(sample_addr)
-);
+//     sample_address_counter #(
+//     .BRAM_DEPTH(OUD_BRAM_DEPTH),
+//     .ADDR_WIDTH(OUD_ADDR_WIDTH)
+// ) sample_address_counter_inst (
+//     .clk_in(clk_100mhz),
+//     .rst_in(sys_rst),
+//     .sample_tick(sample_tick),
+//     .led(led[12]),
+//     .gate_in(gate_value[7:0]),
+//     .sample_addr(sample_addr)
+// );
 
     
-    
-    
-    // always_ff @( posedge clk_100mhz ) begin
-    //     touch_status <= sw[7:0];
-    // end
+    // Wires to hold data output from each BRAM
+    logic [OUD_BRAM_WIDTH-1:0] bram_data_out [NUM_NOTES-1:0];
+
+    // Instantiate BRAMs for each note
+    // change hex file in each BRAM to generate a different note
+    xilinx_true_dual_port_read_first_2_clock_ram #(
+        .RAM_WIDTH(OUD_BRAM_WIDTH),
+        .RAM_DEPTH(OUD_BRAM_DEPTH),
+        .INIT_FILE("../util/output_hex_files/note_1_wave_16ksps.hex") 
+    ) bram_note0 (
+        .addra(sample_addr),
+        .dina(16'd0), // Read-only port
+        .clka(clk_100mhz),
+        .wea(1'b0),    // Read-only
+        .ena(1'b1),
+        .rsta(sys_rst),
+        .regcea(1'b1),
+        .douta(bram_data_out[0])
+    );
+
+    xilinx_true_dual_port_read_first_2_clock_ram #(
+        .RAM_WIDTH(OUD_BRAM_WIDTH),
+        .RAM_DEPTH(OUD_BRAM_DEPTH),
+        .INIT_FILE("../util/output_hex_files/note_2_wave_16ksps.hex") 
+    ) bram_note1 (
+        .addra(sample_addr),
+        .dina(16'd0),
+        .clka(clk_100mhz),
+        .wea(1'b0),
+        .ena(1'b1),
+        .rsta(sys_rst),
+        .regcea(1'b1),
+        .douta(bram_data_out[1])
+    );
+
+    xilinx_true_dual_port_read_first_2_clock_ram #(
+        .RAM_WIDTH(OUD_BRAM_WIDTH),
+        .RAM_DEPTH(OUD_BRAM_DEPTH),
+        .INIT_FILE("../util/output_hex_files/note_3_wave_16ksps.hex") 
+    ) bram_note2 (
+        .addra(sample_addr),
+        .dina(16'd0),
+        .clka(clk_100mhz),
+        .wea(1'b0),
+        .ena(1'b1),
+        .rsta(sys_rst),
+        .regcea(1'b1),
+        .douta(bram_data_out[2])
+    );
+
+    xilinx_true_dual_port_read_first_2_clock_ram #(
+        .RAM_WIDTH(OUD_BRAM_WIDTH),
+        .RAM_DEPTH(OUD_BRAM_DEPTH),
+        .INIT_FILE("../util/output_hex_files/note_4_wave_16ksps.hex") 
+    ) bram_note3 (
+        .addra(sample_addr),
+        .dina(16'd0),
+        .clka(clk_100mhz),
+        .wea(1'b0),
+        .ena(1'b1),
+        .rsta(sys_rst),
+        .regcea(1'b1),
+        .douta(bram_data_out[3])
+    );
+
+
+    //Select BRAM Output Based on Note Selection
+    logic [OUD_BRAM_WIDTH-1:0] selected_bram_data;
+
+    always_comb begin
+        case (note_sel)
+            3'd0: selected_bram_data = bram_data_out[0];
+            3'd1: selected_bram_data = bram_data_out[1];
+            3'd2: selected_bram_data = bram_data_out[2];
+            3'd3: selected_bram_data = bram_data_out[3];
+            // Extend the case statement for additional notes
+            default: selected_bram_data = 16'd0; // Silence if no valid note is selected
+        endcase
+    end
+
+    always_ff @( posedge clk_100mhz ) begin
+        touch_status <= sw[7:0];
+    end
 
 
     //PWM Module Instantiation
     logic spk_out;
+
+    // pwm #(
+    //     .PWM_RESOLUTION(256) // 8-bit resolution
+    // ) spk_pwm (
+    //     .clk_in(clk_100mhz),
+    //     .rst_in(sys_rst),
+    //     .dc_in(spk_data_out_shifted),
+    //     .gate_in(gate_value[7:0]),
+    //     .sig_out(spk_out)
+    // );
 
     localparam PDM_RESOLUTION = 65536; 
     localparam PDM_WIDTH = $clog2(PDM_RESOLUTION);

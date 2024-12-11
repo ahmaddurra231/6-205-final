@@ -24,18 +24,18 @@ module top_level
    assign sys_rst = btn[0];
 
 
-   logic [11:0]       touch_status;
-   //logic              valid_out; //uncomment for capacitors
+   logic [23:0]       touch_status;
+   logic              valid_out; //uncomment for capacitors
    
 // uncomment for capacitors
-//    mpr121_controller mpr121_controller_inst(.clk_in(clk_100mhz), 
-//                                            .rst_in(sys_rst), 
-//                                            .sda(pmodb_sda),
-//                                            .scl_out(pmodb_scl),
-//                                            .led(led[13:0]),
-//                                            .touch_status_out(touch_status),
-//                                            .valid_out(valid_out)
-//                                           ); 
+   mpr121_controller mpr121_controller_inst(.clk_in(clk_100mhz), 
+                                           .rst_in(sys_rst), 
+                                           .sda(pmodb_sda),
+                                           .scl_out(pmodb_scl),
+                                           .led(),
+                                           .touch_status_out(touch_status),
+                                           .valid_out(valid_out)
+                                          ); 
 
    logic [2:0]       note_sel;
    logic [11:0]      gate_value;
@@ -124,7 +124,7 @@ module top_level
    logic [3:0]  num_voices;
    logic [7:0] active_voices;
 
-   assign led[7:0] = active_voices;
+   assign led = touch_status[23:8];
    
 
    address_generator address_generator_inst(.clk_in(clk_100mhz), 
@@ -475,103 +475,15 @@ xilinx_true_dual_port_read_first_2_clock_ram #(
 );
 
     
-    // Wires to hold data output from each BRAM
-    logic [OUD_BRAM_WIDTH-1:0] bram_data_out [NUM_NOTES-1:0];
-
-    // Instantiate BRAMs for each note
-    // change hex file in each BRAM to generate a different note
-    xilinx_true_dual_port_read_first_2_clock_ram #(
-        .RAM_WIDTH(OUD_BRAM_WIDTH),
-        .RAM_DEPTH(OUD_BRAM_DEPTH),
-        .INIT_FILE("../util/output_hex_files/note_1_wave_16ksps.hex") 
-    ) bram_note0 (
-        .addra(sample_addr),
-        .dina(16'd0), // Read-only port
-        .clka(clk_100mhz),
-        .wea(1'b0),    // Read-only
-        .ena(1'b1),
-        .rsta(sys_rst),
-        .regcea(1'b1),
-        .douta(bram_data_out[0])
-    );
-
-    xilinx_true_dual_port_read_first_2_clock_ram #(
-        .RAM_WIDTH(OUD_BRAM_WIDTH),
-        .RAM_DEPTH(OUD_BRAM_DEPTH),
-        .INIT_FILE("../util/output_hex_files/note_2_wave_16ksps.hex") 
-    ) bram_note1 (
-        .addra(sample_addr),
-        .dina(16'd0),
-        .clka(clk_100mhz),
-        .wea(1'b0),
-        .ena(1'b1),
-        .rsta(sys_rst),
-        .regcea(1'b1),
-        .douta(bram_data_out[1])
-    );
-
-    xilinx_true_dual_port_read_first_2_clock_ram #(
-        .RAM_WIDTH(OUD_BRAM_WIDTH),
-        .RAM_DEPTH(OUD_BRAM_DEPTH),
-        .INIT_FILE("../util/output_hex_files/note_3_wave_16ksps.hex") 
-    ) bram_note2 (
-        .addra(sample_addr),
-        .dina(16'd0),
-        .clka(clk_100mhz),
-        .wea(1'b0),
-        .ena(1'b1),
-        .rsta(sys_rst),
-        .regcea(1'b1),
-        .douta(bram_data_out[2])
-    );
-
-    xilinx_true_dual_port_read_first_2_clock_ram #(
-        .RAM_WIDTH(OUD_BRAM_WIDTH),
-        .RAM_DEPTH(OUD_BRAM_DEPTH),
-        .INIT_FILE("../util/output_hex_files/note_4_wave_16ksps.hex") 
-    ) bram_note3 (
-        .addra(sample_addr),
-        .dina(16'd0),
-        .clka(clk_100mhz),
-        .wea(1'b0),
-        .ena(1'b1),
-        .rsta(sys_rst),
-        .regcea(1'b1),
-        .douta(bram_data_out[3])
-    );
-
-
-    //Select BRAM Output Based on Note Selection
-    logic [OUD_BRAM_WIDTH-1:0] selected_bram_data;
-
-    always_comb begin
-        case (note_sel)
-            3'd0: selected_bram_data = bram_data_out[0];
-            3'd1: selected_bram_data = bram_data_out[1];
-            3'd2: selected_bram_data = bram_data_out[2];
-            3'd3: selected_bram_data = bram_data_out[3];
-            // Extend the case statement for additional notes
-            default: selected_bram_data = 16'd0; // Silence if no valid note is selected
-        endcase
-    end
-
-    always_ff @( posedge clk_100mhz ) begin
-        touch_status <= sw[7:0];
-    end
+    
+    
+    // always_ff @( posedge clk_100mhz ) begin
+    //     touch_status <= sw[7:0];
+    // end
 
 
     //PWM Module Instantiation
     logic spk_out;
-
-    // pwm #(
-    //     .PWM_RESOLUTION(256) // 8-bit resolution
-    // ) spk_pwm (
-    //     .clk_in(clk_100mhz),
-    //     .rst_in(sys_rst),
-    //     .dc_in(spk_data_out_shifted),
-    //     .gate_in(gate_value[7:0]),
-    //     .sig_out(spk_out)
-    // );
 
     localparam PDM_RESOLUTION = 65536; 
     localparam PDM_WIDTH = $clog2(PDM_RESOLUTION);

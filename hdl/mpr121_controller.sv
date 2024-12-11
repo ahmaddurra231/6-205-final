@@ -3,7 +3,7 @@ module mpr121_controller(
   input logic rst_in,
   inout logic sda,
   output logic scl_out,
-  output logic [11:0] touch_status_out,
+  output logic [23:0] touch_status_out,
   output logic [13:0] led,
   output logic valid_out
 );
@@ -46,15 +46,18 @@ module mpr121_controller(
     READ_TOUCH_STATUS_FIRST_BYTE,
     START_READ_SECOND_BYTE,
     READ_TOUCH_STATUS_SECOND_BYTE, 
+    START_READ_THIRD_BYTE,
+    READ_TOUCH_STATUS_THIRD_BYTE,
     STOP
   } state_t;
 
   state_t state;
   state_t next_state;
-  logic [3:0] stop_byte; 
+  logic [3:0] stop_byte;
+  logic [1:0] num_devices; 
   assign led[7:0] = touch_status_out[7:0];
 
-  assign peripheral_addr_in = 7'h5A; // MPR121 default I2C address
+  //assign peripheral_addr_in = 7'h5A; // MPR121 default I2C address
   always_ff @(posedge clk_in) begin
     if (rst_in) begin
       start <= 1'b0;
@@ -64,6 +67,7 @@ module mpr121_controller(
       touch_status_out <= 12'b0;
       valid_out <= 1'b0;
       state <= INIT_START;
+      num_devices <= 2'd3;
     end else begin
       case (state)
         INIT_START: begin
@@ -75,6 +79,18 @@ module mpr121_controller(
           state <= AWAIT_VALID_OUT;
           next_state <= INIT_WRITE_THRESH;
           threshold_index <= 0;
+          peripheral_addr_in <= (num_devices == 2'd1) ? 7'h5A : 7'h5B;
+          case (num_devices)
+            2'd1: begin
+              peripheral_addr_in <= 7'h5A;
+            end
+            2'd2: begin
+              peripheral_addr_in <= 7'h5B;
+            end
+            2'd3: begin
+              peripheral_addr_in <= 7'h5C;
+            end
+          endcase
         end
         AWAIT_VALID_OUT: begin
           start <= 1'b0;
@@ -150,7 +166,12 @@ module mpr121_controller(
         end
         VERIFY_ECR_2: begin
           if (data_byte_out == 8'h0C) begin
-            state <= START_READ_TOUCH_STATUS;
+            if (num_devices == 2'd1) begin
+              state <= START_READ_TOUCH_STATUS;
+            end else begin
+              state <= INIT_START;
+              num_devices <= num_devices - 1;
+            end
           end else begin
             state <= STOP;
             stop_byte <= 4'b0011;
@@ -162,6 +183,7 @@ module mpr121_controller(
           command_byte_in <= 8'h00; // MPR121_TOUCH_STATUS register
           state <= AWAIT_VALID_OUT;
           next_state <= READ_TOUCH_STATUS_FIRST_BYTE;
+          peripheral_addr_in <= 7'h5A;
         end
         READ_TOUCH_STATUS_FIRST_BYTE: begin
           touch_status_out[7:0] <= data_byte_out;
@@ -170,12 +192,25 @@ module mpr121_controller(
         START_READ_SECOND_BYTE: begin
           start <= 1'b1;
           rw <= 1'b1; // Read operation
-          command_byte_in <= 8'h01; // MPR121_TOUCH_STATUS register
+          command_byte_in <= 8'h00; // MPR121_TOUCH_STATUS register
           state <= AWAIT_VALID_OUT;
           next_state <= READ_TOUCH_STATUS_SECOND_BYTE;
+          peripheral_addr_in <= 7'h5B;
         end
         READ_TOUCH_STATUS_SECOND_BYTE: begin
-          touch_status_out[11:8] <= data_byte_out[3:0];
+          touch_status_out[15:8] <= data_byte_out;
+          state <= START_READ_THIRD_BYTE;
+        end
+        START_READ_THIRD_BYTE: begin
+          start <= 1'b1;
+          rw <= 1'b1; // Read operation
+          command_byte_in <= 8'h00; // MPR121_TOUCH_STATUS register
+          state <= AWAIT_VALID_OUT;
+          next_state <= READ_TOUCH_STATUS_THIRD_BYTE;
+          peripheral_addr_in <= 7'h5C;
+        end
+        READ_TOUCH_STATUS_THIRD_BYTE: begin
+          touch_status_out[23:16] <= data_byte_out;
           state <= START_READ_TOUCH_STATUS;
           valid_out <= 1'b1;
         end

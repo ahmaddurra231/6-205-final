@@ -12,7 +12,7 @@
 
 
 module adsr #(
-        parameter real CLK_FREQ       = 110_000_000.0, //110 MHz
+        parameter real CLK_FREQ       = 100_000_000.0, //110 MHz
         parameter real T_ATTACK_MS    =  1, //10,
         parameter real T_DECAY_MS     =  2 ,//50,
         parameter real T_SUSTAIN_MS   = 5, //200,

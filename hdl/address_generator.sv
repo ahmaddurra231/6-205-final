@@ -23,7 +23,7 @@ module address_generator #(
 
 
   logic [1:0] waveform_idx;
-  logic [4:0] waveform_idx_offset;
+  logic [5:0] waveform_idx_offset;
 
   logic [3:0] num_voices_intermediate;
   logic [NUM_NOTES - 1:0] active_voices_intermediate;
@@ -85,6 +85,7 @@ module address_generator #(
                 addr_out[idx] <= phase_in[idx][31:(32 - ADDR_WIDTH)];
                 temp_num_voices = temp_num_voices + 1; //I can make this output the number of voices played
               end
+
             end else begin
               addr_out[idx] <= '0;
             end

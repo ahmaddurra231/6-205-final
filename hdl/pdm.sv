@@ -6,7 +6,7 @@ module pdm #(
   input wire clk_in,
   input wire rst_in,
   input wire [PDM_RESOLUTION_WIDTH - 1:0] dc_in,  // Input amplitude (8-bit)
-  input wire [7:0] gate_in, // Gate signal for note activity
+  input wire [23:0] gate_in, // Gate signal for note activity
   output logic sig_out     // PDM output signal
 );
   localparam PDM_RESOLUTION_WIDTH = $clog2(PDM_RESOLUTION);

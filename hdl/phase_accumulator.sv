@@ -4,7 +4,8 @@ module phase_accumulator (
     input logic clk_in,                  // System clock
     input logic rst_in,                  // Reset signal
     input logic [23:0] gate_in,
-    output logic [31:0] phase_value [23:0]   // Accumulated phase value output
+    output logic [31:0] phase_value [23:0],   // Accumulated phase value output
+    output logic led[5:0]
 );
   // Parameters for note values (e.g., MIDI note numbers or custom IDs)
   parameter NOTE_C4 = 8'd60;  // C4 (Middle C)

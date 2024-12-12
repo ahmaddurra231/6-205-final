@@ -150,7 +150,7 @@ module top_level
 xilinx_true_dual_port_read_first_2_clock_ram
     #(.RAM_WIDTH(SINE_BRAM_WIDTH),
       .RAM_DEPTH(SINE_BRAM_DEPTH),
-      .INIT_FILE("../util/sine_wave_256_uint16.hex")) sine_audio_bram
+      .INIT_FILE("../util/sawtooth_wave_256_uint16.hex")) sine_audio_bram
       (
       // PORT A
       .addra(note_addr_logic[0]),
@@ -253,7 +253,6 @@ xilinx_true_dual_port_read_first_2_clock_ram #(
 
 //////////// SAWTOOTH BRAMS ////////////////////////////
 
-localparam SAWTOOTH_ADDR_OFFSET = 8;
 
 xilinx_true_dual_port_read_first_2_clock_ram
     #(.RAM_WIDTH(SINE_BRAM_WIDTH),
@@ -262,23 +261,23 @@ xilinx_true_dual_port_read_first_2_clock_ram
     ) sawtooth_audio_bram
       (
       // PORT A
-      .addra(note_addr_logic[0 + SAWTOOTH_ADDR_OFFSET]),
+      .addra(note_addr_logic[8]),
       .dina(0), // we only use port A for reads!
       .clka(clk_100mhz),
       .wea(1'b0), // read only
       .ena(1'b1),
       .rsta(sys_rst),
       .regcea(1'b1),
-      .douta(spk_data_out[0 + SAWTOOTH_ADDR_OFFSET]),
+      .douta(spk_data_out[8]),
       // PORT B
-      .addrb(note_addr_logic[1 + SAWTOOTH_ADDR_OFFSET]),
+      .addrb(note_addr_logic[9]),
       .dinb(0),
       .clkb(clk_100mhz),
       .web(1'b0),
       .enb(1'b1),
       .rstb(sys_rst),
       .regceb(1'b1),
-      .doutb(spk_data_out[1 + SAWTOOTH_ADDR_OFFSET])
+      .doutb(spk_data_out[9])
       );
 
     
@@ -288,23 +287,23 @@ xilinx_true_dual_port_read_first_2_clock_ram #(
     .INIT_FILE("../util/sawtooth_wave_256_uint16.hex")
     ) sawtooth_audio_bram1 (
         // PORT A
-        .addra(note_addr_logic[2 + SAWTOOTH_ADDR_OFFSET]),
+        .addra(note_addr_logic[10]),
         .dina(0),
         .clka(clk_100mhz),
         .wea(1'b0),
         .ena(1'b1),
         .rsta(sys_rst),
         .regcea(1'b1),
-        .douta(spk_data_out[2 + SAWTOOTH_ADDR_OFFSET]),
+        .douta(spk_data_out[10]),
         // PORT B
-        .addrb(note_addr_logic[3 + SAWTOOTH_ADDR_OFFSET]),
+        .addrb(note_addr_logic[11]),
         .dinb(0),
         .clkb(clk_100mhz),
         .web(1'b0),
         .enb(1'b1),
         .rstb(sys_rst),
         .regceb(1'b1),
-        .doutb(spk_data_out[3 + SAWTOOTH_ADDR_OFFSET])
+        .doutb(spk_data_out[11])
     );
 
 xilinx_true_dual_port_read_first_2_clock_ram #(
@@ -313,23 +312,23 @@ xilinx_true_dual_port_read_first_2_clock_ram #(
     .INIT_FILE("../util/sawtooth_wave_256_uint16.hex")
     ) sawtooth_audio_bram2 (
         // PORT A
-        .addra(note_addr_logic[4 + SAWTOOTH_ADDR_OFFSET]),
+        .addra(note_addr_logic[12]),
         .dina(0),
         .clka(clk_100mhz),
         .wea(1'b0),
         .ena(1'b1),
         .rsta(sys_rst),
         .regcea(1'b1),
-        .douta(spk_data_out[4 + SAWTOOTH_ADDR_OFFSET]),
+        .douta(spk_data_out[12]),
         // PORT B
-        .addrb(note_addr_logic[5 + SAWTOOTH_ADDR_OFFSET]),
+        .addrb(note_addr_logic[13]),
         .dinb(0),
         .clkb(clk_100mhz),
         .web(1'b0),
         .enb(1'b1),
         .rstb(sys_rst),
         .regceb(1'b1),
-        .doutb(spk_data_out[5 + SAWTOOTH_ADDR_OFFSET])
+        .doutb(spk_data_out[13])
     );
 
 xilinx_true_dual_port_read_first_2_clock_ram #(
@@ -338,23 +337,23 @@ xilinx_true_dual_port_read_first_2_clock_ram #(
     .INIT_FILE("../util/sawtooth_wave_256_uint16.hex")
     ) sawtooth_audio_bram3 (
         // PORT A
-        .addra(note_addr_logic[6 + SAWTOOTH_ADDR_OFFSET]),
+        .addra(note_addr_logic[14]),
         .dina(0),
         .clka(clk_100mhz),
         .wea(1'b0),
         .ena(1'b1),
         .rsta(sys_rst),
         .regcea(1'b1),
-        .douta(spk_data_out[6 + SAWTOOTH_ADDR_OFFSET]),
+        .douta(spk_data_out[14]),
         // PORT B
-        .addrb(note_addr_logic[7 + SAWTOOTH_ADDR_OFFSET]),
+        .addrb(note_addr_logic[15]),
         .dinb(0),
         .clkb(clk_100mhz),
         .web(1'b0),
         .enb(1'b1),
         .rstb(sys_rst),
         .regceb(1'b1),
-        .doutb(spk_data_out[7 + SAWTOOTH_ADDR_OFFSET])
+        .doutb(spk_data_out[15])
     );
 
 
@@ -467,8 +466,9 @@ xilinx_true_dual_port_read_first_2_clock_ram #(
 
 //////////////////////////////////////////////////////////
 
-logic [3:0] note_count;
+logic [5:0] note_count;
 logic [32:0] voice_values [0:7]; //change 32 back to 16
+
 
 integer v_idx;
     
@@ -482,13 +482,10 @@ end
 always_ff @(posedge clk_100mhz)begin
     for (v_idx = 0; v_idx < 8; v_idx = v_idx + 1) begin
         if (active_voices_idx[v_idx] < 5'b11111) begin
-            led[9:5] = active_voices_idx[v_idx];
-            if (active_voices_idx[v_idx] > 7) begin
-                voice_values[v_idx] <= spk_data_out[active_voices_idx[v_idx]];
-            end else begin
+            
 
-                voice_values[v_idx]  <= (spk_data_out[active_voices_idx[v_idx]] * adsr_envelope[active_voices_idx[v_idx]]) >> 16;
-            end
+            voice_values[v_idx]  <= (spk_data_out[active_voices_idx[v_idx]] * adsr_envelope[active_voices_idx[v_idx]]) >> 16;
+            
         end else begin
             voice_values[v_idx] <= 0;
         end
@@ -503,7 +500,6 @@ logic [SINE_BRAM_WIDTH:0] average0, average1, average2, average3;
 logic [SINE_BRAM_WIDTH-1:0] combined_sine_spk_data_out;
 
 logic [PDM_WIDTH - 1:0] spk_data_out_shifted;
-logic [32:0] modulated_combined_sine_data; // ADSR-modulated combined sine data --> change it back to 15 
 logic [32:0] multiplied_sum; //change it back to 26 ? 
 logic [32:0] sum; //change it back to 19
 
@@ -515,7 +511,6 @@ always_ff @(posedge clk_100mhz ) begin
         average3 <= 0;
         combined_sine_spk_data_out <= 0;
 
-        modulated_combined_sine_data <= 0;
         spk_data_out_shifted <= 0;
     end else begin
         // Averaging Logic
@@ -565,7 +560,7 @@ sample_rate_counter #(
     .sample_tick(sample_tick)
 );
 
-/
+
 
 //PDM Module Instantiation
 logic spk_out;

@@ -29,32 +29,41 @@ module address_generator #(
       for (idx = 0; idx < NUM_NOTES; idx++) begin
         addr_out[idx] <= '0;
       end
+      for (idx = 0; idx < NUM_VOICES; idx++) begin
+        active_voices_idx[idx] <= 5'b11111;
+      end
     end 
     
     else begin
       // Reset temporary variables
-      num_voices     <= 0;
-      active_voices  <= 8'b0;
-      for (idx = 0; idx < NUM_NOTES; idx++) begin
-        addr_out[idx] <= '0;
-      end
+      logic [3:0] temp_num_voices;
+      logic [NUM_NOTES - 1:0] temp_active_voices;
+      logic [NUM_NOTES_WIDTH - 1:0] temp_active_voices_idx [NUM_VOICES - 1:0];
 
+      temp_num_voices = 0;
+      temp_active_voices = 0;
       for (idx = 0; idx < NUM_VOICES; idx++) begin
-        active_voices_idx[idx] <= 5'b11111;
+        temp_active_voices_idx[idx] = 5'b11111;
       end
-      
+    
       // Iterate through each gate to determine active voices and assign addresses
       for (idx = 0; idx < NUM_NOTES; idx++) begin
         if (gate_in[idx]) begin
-          if (num_voices < NUM_VOICES) begin
-            active_voices[idx] <= 1'b1; // Mark the voice as active
-            active_voices_idx[num_voices] <= idx;
+          if (temp_num_voices < NUM_VOICES) begin
+            temp_active_voices[idx] = 1'b1; // Mark the voice as active
+            temp_active_voices_idx[temp_num_voices] = idx;
             addr_out[idx] <= phase_in[idx][31:(32 - ADDR_WIDTH)];
-            num_voices <= num_voices + 1; //I can make this output the number of voices played
+            temp_num_voices = temp_num_voices + 1; //I can make this output the number of voices played
           end
         end else begin
-          active_voices[idx] <= 1'b0; // Mark the voice as inactive
+          addr_out[idx] <= '0;
         end
+      end
+
+      num_voices <= temp_num_voices;
+      active_voices <= temp_active_voices;
+      for (idx = 0; idx < NUM_VOICES; idx++) begin
+        active_voices_idx[idx] <= temp_active_voices_idx[idx];
       end
     end
   end

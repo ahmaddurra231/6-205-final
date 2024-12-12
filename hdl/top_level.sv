@@ -249,7 +249,7 @@ localparam SAWTOOTH_ADDR_OFFSET = 8;
 xilinx_true_dual_port_read_first_2_clock_ram
     #(.RAM_WIDTH(SINE_BRAM_WIDTH),
       .RAM_DEPTH(SINE_BRAM_DEPTH),
-      .INIT_FILE("../util/sawtooth_wave_256_uint16")
+      .INIT_FILE("../util/sawtooth_wave_256_uint16.hex")
     ) sawtooth_audio_bram
       (
       // PORT A
@@ -276,7 +276,7 @@ xilinx_true_dual_port_read_first_2_clock_ram
 xilinx_true_dual_port_read_first_2_clock_ram #(
     .RAM_WIDTH(SINE_BRAM_WIDTH),
     .RAM_DEPTH(SINE_BRAM_DEPTH),
-    .INIT_FILE("../util/sawtooth_wave_256_uint16")
+    .INIT_FILE("../util/sawtooth_wave_256_uint16.hex")
     ) sawtooth_audio_bram1 (
         // PORT A
         .addra(note_addr_logic[2 + SAWTOOTH_ADDR_OFFSET]),
@@ -301,7 +301,7 @@ xilinx_true_dual_port_read_first_2_clock_ram #(
 xilinx_true_dual_port_read_first_2_clock_ram #(
     .RAM_WIDTH(SINE_BRAM_WIDTH),
     .RAM_DEPTH(SINE_BRAM_DEPTH),
-    .INIT_FILE("../util/sawtooth_wave_256_uint16")
+    .INIT_FILE("../util/sawtooth_wave_256_uint16.hex")
     ) sawtooth_audio_bram2 (
         // PORT A
         .addra(note_addr_logic[4 + SAWTOOTH_ADDR_OFFSET]),
@@ -326,7 +326,7 @@ xilinx_true_dual_port_read_first_2_clock_ram #(
 xilinx_true_dual_port_read_first_2_clock_ram #(
     .RAM_WIDTH(SINE_BRAM_WIDTH),
     .RAM_DEPTH(SINE_BRAM_DEPTH),
-    .INIT_FILE("../util/sawtooth_wave_256_uint16")
+    .INIT_FILE("../util/sawtooth_wave_256_uint16.hex")
     ) sawtooth_audio_bram3 (
         // PORT A
         .addra(note_addr_logic[6 + SAWTOOTH_ADDR_OFFSET]),
@@ -358,7 +358,7 @@ localparam SQUARE_ADDR_OFFSET = 16;
 xilinx_true_dual_port_read_first_2_clock_ram
     #(.RAM_WIDTH(SINE_BRAM_WIDTH),
       .RAM_DEPTH(SINE_BRAM_DEPTH),
-      .INIT_FILE("../util/square_wave_256_uint16")
+      .INIT_FILE("../util/square_wave_256_uint16.hex")
     ) square_audio_bram
       (
       // PORT A
@@ -384,7 +384,7 @@ xilinx_true_dual_port_read_first_2_clock_ram
 xilinx_true_dual_port_read_first_2_clock_ram #(
     .RAM_WIDTH(SINE_BRAM_WIDTH),
     .RAM_DEPTH(SINE_BRAM_DEPTH),
-    .INIT_FILE("../util/square_wave_256_uint16")
+    .INIT_FILE("../util/square_wave_256_uint16.hex")
     ) square_audio_bram1 (
         // PORT A
         .addra(note_addr_logic[2 + SQUARE_ADDR_OFFSET]),
@@ -409,7 +409,7 @@ xilinx_true_dual_port_read_first_2_clock_ram #(
 xilinx_true_dual_port_read_first_2_clock_ram #(
     .RAM_WIDTH(SINE_BRAM_WIDTH),
     .RAM_DEPTH(SINE_BRAM_DEPTH),
-    .INIT_FILE("../util/square_wave_256_uint16")
+    .INIT_FILE("../util/square_wave_256_uint16.hex")
     ) square_audio_bram2 (
         // PORT A
         .addra(note_addr_logic[4 + SQUARE_ADDR_OFFSET]),
@@ -434,7 +434,7 @@ xilinx_true_dual_port_read_first_2_clock_ram #(
 xilinx_true_dual_port_read_first_2_clock_ram #(
     .RAM_WIDTH(SINE_BRAM_WIDTH),
     .RAM_DEPTH(SINE_BRAM_DEPTH),
-    .INIT_FILE("../util/square_wave_256_uint16")
+    .INIT_FILE("../util/square_wave_256_uint16.hex")
     ) square_audio_bram3 (
         // PORT A
         .addra(note_addr_logic[6 + SQUARE_ADDR_OFFSET]),
@@ -473,7 +473,7 @@ end
 always_ff @(posedge clk_100mhz)begin
     for (v_idx = 0; v_idx < 8; v_idx = v_idx + 1) begin
         if (active_voices_idx[v_idx] < 5'b11111) begin
-            voice_values[v_idx]  <= (spk_data_out[active_voices_idx[v_idx]] * adsr_envelope[v_idx]) >> 16;
+            voice_values[v_idx]  <= (spk_data_out[active_voices_idx[v_idx]] * adsr_envelope[active_voices_idx[v_idx]]) >> 16;
         end else begin
             voice_values[v_idx] <= 0;
         end

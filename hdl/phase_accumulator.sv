@@ -4,6 +4,7 @@ module phase_accumulator (
     input logic clk_in,                  // System clock
     input logic rst_in,                  // Reset signal
     input logic [23:0] gate_in,
+    input logic [23:0] touch_status_in,  // 12 touch_status_in to determine the note`s frequency
     output logic [31:0] phase_value [23:0]   // Accumulated phase value output
 );
   // Parameters for note values (e.g., MIDI note numbers or custom IDs)
@@ -22,35 +23,70 @@ module phase_accumulator (
 
   // Frequency to Phase Increment mapping (simplified)
 
-  // Assign phase increment values based on gate_in position
   always_comb begin
-    phase_increment[0] = (gate_in[0]) ? 32'd11237 : 32'd0;  // C4 freq = 261.626 Hz
-    phase_increment[1] = (gate_in[1]) ? 32'd12613 : 32'd0;  // D4 freq = 293.665 Hz
-    phase_increment[2] = (gate_in[2]) ? 32'd14157 : 32'd0;  // E4 freq = 329.628 Hz
-    phase_increment[3] = (gate_in[3]) ? 32'd14999 : 32'd0;  // F4 freq = 349.228 Hz
-    phase_increment[4] = (gate_in[4]) ? 32'd16836 : 32'd0;  // G4 freq = 391.995 Hz
-    phase_increment[5] = (gate_in[5]) ? 32'd18898 : 32'd0;  // A4 freq = 440.000 Hz
-    phase_increment[6] = (gate_in[6]) ? 32'd21212 : 32'd0;  // B4 freq = 493.883 Hz
-    phase_increment[7] = (gate_in[7]) ? 32'd22473 : 32'd0;  // C5 freq = 523.251 Hz
+    phase_increment[0] = (touch_status_in[0]) ? 32'd11237 
+    :(gate_in[8])? 32'd22474
+    :32'd33711;  // C4 freq = 261.626 Hz
 
-    phase_increment[8]  = (gate_in[8])  ? 32'd11237 : 32'd0;  // C4 freq = 261.626 Hz
-    phase_increment[9]  = (gate_in[9])  ? 32'd12613 : 32'd0;  // D4 freq = 293.665 Hz
-    phase_increment[10] = (gate_in[10]) ? 32'd14157 : 32'd0;  // E4 freq = 329.628 Hz
-    phase_increment[11] = (gate_in[11]) ? 32'd14999 : 32'd0;  // F4 freq = 349.228 Hz
-    phase_increment[12] = (gate_in[12]) ? 32'd16836 : 32'd0;  // G4 freq = 391.995 Hz
-    phase_increment[13] = (gate_in[13]) ? 32'd18898 : 32'd0;  // A4 freq = 440.000 Hz
-    phase_increment[14] = (gate_in[14]) ? 32'd21212 : 32'd0;  // B4 freq = 493.883 Hz
-    phase_increment[15] = (gate_in[15]) ? 32'd22473 : 32'd0;  // C5 freq = 523.251 Hz
+    phase_increment[1] = (touch_status_in[1]) ? 32'd12613
+    :(gate_in[9])? 32'd25226
+    :32'd37839;  // D4 freq = 293.665 Hz
 
-    phase_increment[16] = (gate_in[16]) ? 32'd11237 : 32'd0;  // C4 freq = 261.626 Hz
-    phase_increment[17] = (gate_in[17]) ? 32'd12613 : 32'd0;  // D4 freq = 293.665 Hz
-    phase_increment[18] = (gate_in[18]) ? 32'd14157 : 32'd0;  // E4 freq = 329.628 Hz
-    phase_increment[19] = (gate_in[19]) ? 32'd14999 : 32'd0;  // F4 freq = 349.228 Hz
-    phase_increment[20] = (gate_in[20]) ? 32'd16836 : 32'd0;  // G4 freq = 391.995 Hz
-    phase_increment[21] = (gate_in[21]) ? 32'd18898 : 32'd0;  // A4 freq = 440.000 Hz
-    phase_increment[22] = (gate_in[22]) ? 32'd21212 : 32'd0;  // B4 freq = 493.883 Hz
-    phase_increment[23] = (gate_in[23]) ? 32'd22473 : 32'd0;  // C5 freq = 523.251 Hz
+    phase_increment[2] = (touch_status_in[2]) ? 32'd14157
+    :(gate_in[10])? 32'd28314
+    :32'd42471;  // E4 freq = 329.628 Hz
+
+    phase_increment[3] = (touch_status_in[3]) ? 32'd14999
+    :(gate_in[11])? 32'd29998
+    :32'd44997;  // F4 freq = 349.228 Hz
+
+    phase_increment[4] = (touch_status_in[4]) ? 32'd16836
+    :(gate_in[12])? 32'd33672
+    :32'd50508;  // G4 freq = 391.995 Hz
+
+    phase_increment[5] = (touch_status_in[5]) ? 32'd18898
+    :(gate_in[13])? 32'd37796
+    :32'd56694;  // A4 freq = 440.000 Hz
+
+    phase_increment[6] = (touch_status_in[6]) ? 32'd21212
+    :(gate_in[14])? 32'd42424
+    :32'd63636;  // B4 freq = 493.883 Hz
+
+    phase_increment[7] = (touch_status_in[7]) ? 32'd22473
+    :(gate_in[15])? 32'd44946
+    :32'd67419;  // C5 freq = 523.251 Hz
+
   end
+
+  // // Assign phase increment values based on gate_in position
+  // always_comb begin
+  //   phase_increment[0] = (gate_in[0]) ? 32'd11237 : 32'd0;  // C4 freq = 261.626 Hz
+  //   phase_increment[1] = (gate_in[1]) ? 32'd12613 : 32'd0;  // D4 freq = 293.665 Hz
+  //   phase_increment[2] = (gate_in[2]) ? 32'd14157 : 32'd0;  // E4 freq = 329.628 Hz
+  //   phase_increment[3] = (gate_in[3]) ? 32'd14999 : 32'd0;  // F4 freq = 349.228 Hz
+  //   phase_increment[4] = (gate_in[4]) ? 32'd16836 : 32'd0;  // G4 freq = 391.995 Hz
+  //   phase_increment[5] = (gate_in[5]) ? 32'd18898 : 32'd0;  // A4 freq = 440.000 Hz
+  //   phase_increment[6] = (gate_in[6]) ? 32'd21212 : 32'd0;  // B4 freq = 493.883 Hz
+  //   phase_increment[7] = (gate_in[7]) ? 32'd22473 : 32'd0;  // C5 freq = 523.251 Hz
+
+  //   phase_increment[8]  = (gate_in[8])  ? 32'd11237 : 32'd0;  // C4 freq = 261.626 Hz
+  //   phase_increment[9]  = (gate_in[9])  ? 32'd12613 : 32'd0;  // D4 freq = 293.665 Hz
+  //   phase_increment[10] = (gate_in[10]) ? 32'd14157 : 32'd0;  // E4 freq = 329.628 Hz
+  //   phase_increment[11] = (gate_in[11]) ? 32'd14999 : 32'd0;  // F4 freq = 349.228 Hz
+  //   phase_increment[12] = (gate_in[12]) ? 32'd16836 : 32'd0;  // G4 freq = 391.995 Hz
+  //   phase_increment[13] = (gate_in[13]) ? 32'd18898 : 32'd0;  // A4 freq = 440.000 Hz
+  //   phase_increment[14] = (gate_in[14]) ? 32'd21212 : 32'd0;  // B4 freq = 493.883 Hz
+  //   phase_increment[15] = (gate_in[15]) ? 32'd22473 : 32'd0;  // C5 freq = 523.251 Hz
+
+  //   phase_increment[16] = (gate_in[16]) ? 32'd11237 : 32'd0;  // C4 freq = 261.626 Hz
+  //   phase_increment[17] = (gate_in[17]) ? 32'd12613 : 32'd0;  // D4 freq = 293.665 Hz
+  //   phase_increment[18] = (gate_in[18]) ? 32'd14157 : 32'd0;  // E4 freq = 329.628 Hz
+  //   phase_increment[19] = (gate_in[19]) ? 32'd14999 : 32'd0;  // F4 freq = 349.228 Hz
+  //   phase_increment[20] = (gate_in[20]) ? 32'd16836 : 32'd0;  // G4 freq = 391.995 Hz
+  //   phase_increment[21] = (gate_in[21]) ? 32'd18898 : 32'd0;  // A4 freq = 440.000 Hz
+  //   phase_increment[22] = (gate_in[22]) ? 32'd21212 : 32'd0;  // B4 freq = 493.883 Hz
+  //   phase_increment[23] = (gate_in[23]) ? 32'd22473 : 32'd0;  // C5 freq = 523.251 Hz
+  // end
   
   // Phase accumulator register
   always_ff @(posedge clk_in) begin

@@ -90,7 +90,8 @@ module top_level
    phase_accumulator phase_accumulator_inst(.clk_in(clk_100mhz), 
                                            .rst_in(sys_rst), 
                                            .gate_in(gate_value),
-                                           .phase_value(phase_value)
+                                           .phase_value(phase_value), 
+                                           .touch_status_in(touch_status)
                                           );
                                         
    // BRAM Memory
@@ -107,7 +108,7 @@ module top_level
    logic [NUM_NOTES - 1:0] active_voices;
    //logic [4:0] active_voices_idx [NUM_VOICES -1:0];
 
-   //assign led = touch_status[23:8];
+   assign led = touch_status[23:8];
    
 
    address_generator address_generator_inst(.clk_in(clk_100mhz), 
@@ -654,7 +655,8 @@ logic [SINE_BRAM_WIDTH-1:0] combined_sine_spk_data_out;
 logic [PDM_WIDTH - 1:0] spk_data_out_shifted;
 logic [32:0] modulated_combined_sine_data; // ADSR-modulated combined sine data --> change it back to 15 
 logic [32:0] multiplied_sum; //change it back to 26 ? 
-logic [32:0] sum; //change it back to 19
+logic [23:0] sum; //change it back to 19
+logic [20:0] sum_1, sum_2, sum_3;
 
 always_ff @(posedge clk_100mhz ) begin
     if (sys_rst) begin
@@ -683,7 +685,12 @@ always_ff @(posedge clk_100mhz ) begin
         average10 <= voice_values[20] + voice_values[21];
         average11 <= voice_values[22] + voice_values[23];
         //this might cause issues - multiplying a lot of numbers - come back to it 
-        sum <= (average0 + average1 + average2 + average3 + average4 + average5 + average6 + average7 + average8 + average9 + average10 + average11) ; //OVERFLOW ? how do I take the highest ?
+        sum_1 <= average0 + average1 + average2 + average3;    
+        sum_2 <= average4 + average5 + average6 + average7;
+        sum_3 <= average8 + average9 + average10 + average11;
+
+        sum <= sum_1 + sum_2 + sum_3;
+         //OVERFLOW ? how do I take the highest ?
         
         //divide by number of voices played: 
         //combined_sine_spk_data_out <= (average0 + average1 + average2 + average3) >> note_count;
@@ -698,7 +705,7 @@ always_ff @(posedge clk_100mhz ) begin
             4'd6: multiplied_sum <= sum * 42;
             4'd7: multiplied_sum <= sum * 36;
             4'd8: multiplied_sum <= sum * 32;
-            4'd8: multiplied_sum <= sum * 32;
+            //4'd8: multiplied_sum <= sum * 32;
             //this should be fine - if we try to play more than 8 it would output 0
             default: multiplied_sum <= 0;
         endcase

@@ -40,15 +40,24 @@ module note_decoder (
     //     end
     // endgenerate
 
-    assign gate_out = touch_status_in;
+    // assign gate_out = touch_status_in;
      
     assign trigger_out = gate_out & ~gate_out_prev;
     //assign trigger_out = debounced & ~debounced_prev;
-
+    always_comb begin
+        gate_out[0] = touch_status_in[0] | touch_status_in[8] | touch_status_in[16];
+        gate_out[1] = touch_status_in[1] | touch_status_in[9] | touch_status_in[17];
+        gate_out[2] = touch_status_in[2] | touch_status_in[10] | touch_status_in[18];
+        gate_out[3] = touch_status_in[3] | touch_status_in[11] | touch_status_in[19];
+        gate_out[4] = touch_status_in[4] | touch_status_in[12] | touch_status_in[20];
+        gate_out[5] = touch_status_in[5] | touch_status_in[13] | touch_status_in[21];
+        gate_out[6] = touch_status_in[6] | touch_status_in[14] | touch_status_in[22];
+        gate_out[7] = touch_status_in[7] | touch_status_in[15] | touch_status_in[23];
+    end
 
 
     //  always_ff @(posedge clk_in) begin
-    //     if (rst_in) begin
+    //     if (rst_in) begin    
     //         debounced_prev <= 12'b0;
     //     end else begin
     //         debounced_prev <= debounced;

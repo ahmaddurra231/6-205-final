@@ -38,7 +38,7 @@ module top_level
                                           ); 
 
    logic [2:0]       note_sel;
-   logic [23:0]      gate_value;
+   logic [23:0]      gate_value, gate_value_pipe;
    logic [23:0]      trigger_value;  
   
    note_decoder note_decoder_inst(.clk_in(clk_100mhz), 
@@ -73,13 +73,21 @@ module top_level
             ) adsr_inst (
                 .clk_in(clk_100mhz),
                 .rst_in(sys_rst),
-                .hold(gate_value[i]),       // Hold is true if this note is playing
+                .hold(gate_value_pipe[i]),       // Hold is true if this note is playing
                 .start(trigger_value[i]),   // Start this ADSR when the note is triggered
                 .envelope(adsr_envelope[i]),
                 .adsr_idle(adsr_idle[i])
             );
         end
     endgenerate
+
+    always_ff @(posedge clk_100mhz) begin
+        if (sys_rst) begin
+            gate_value_pipe <= 0;
+        end else begin
+            gate_value_pipe <= gate_value;
+        end
+    end
 
 
 
@@ -89,7 +97,7 @@ module top_level
 
    phase_accumulator phase_accumulator_inst(.clk_in(clk_100mhz), 
                                            .rst_in(sys_rst), 
-                                           .gate_in(gate_value),
+                                           .gate_in(gate_value_pipe),
                                            .phase_value(phase_value)
                                           );
                                         
@@ -107,13 +115,14 @@ module top_level
    logic [NUM_NOTES - 1:0] active_voices;
    logic [4:0] active_voices_idx [NUM_VOICES -1:0];
 
-   assign led = touch_status[23:8];
+   assign led[4:0] = active_voices_idx[0];
+//    assign led[15:8] = touch_status[23:16];
    
 
    address_generator address_generator_inst(.clk_in(clk_100mhz), 
                                            .rst_in(sys_rst), 
                                            .phase_in(phase_value),
-                                           .gate_in(gate_value[23:0]),
+                                           .gate_in(gate_value_pipe),
                                            .addr_out(note_addr),
                                            .num_voices(num_voices),
                                            .active_voices(active_voices), 
@@ -473,7 +482,13 @@ end
 always_ff @(posedge clk_100mhz)begin
     for (v_idx = 0; v_idx < 8; v_idx = v_idx + 1) begin
         if (active_voices_idx[v_idx] < 5'b11111) begin
-            voice_values[v_idx]  <= (spk_data_out[active_voices_idx[v_idx]] * adsr_envelope[active_voices_idx[v_idx]]) >> 16;
+            led[9:5] = active_voices_idx[v_idx];
+            if (active_voices_idx[v_idx] > 7) begin
+                voice_values[v_idx] <= spk_data_out[active_voices_idx[v_idx]];
+            end else begin
+
+                voice_values[v_idx]  <= (spk_data_out[active_voices_idx[v_idx]] * adsr_envelope[active_voices_idx[v_idx]]) >> 16;
+            end
         end else begin
             voice_values[v_idx] <= 0;
         end
@@ -528,19 +543,7 @@ always_ff @(posedge clk_100mhz ) begin
             default: multiplied_sum <= 0;
         endcase
 
-        combined_sine_spk_data_out <= multiplied_sum >> 8;
-
-
-        // average0 <= (sine_spk_data_out[0] + sine_spk_data_out[1]) >> 1;
-        // average1 <= (sine_spk_data_out[2] + sine_spk_data_out[3]) >> 1;
-        // combined_sine_spk_data_out <= (average0 + average1) >> 1;
-        
-        // ADSR Modulation and PDM Data Preparation
-        //temp <= adsr_envelope * (combined_sine_spk_data_out >>> 1);
-        //modulated_combined_sine_data <= temp >>> 16;
-        //spk_data_out_shifted <= modulated_combined_sine_data;
-
-        spk_data_out_shifted <= combined_sine_spk_data_out;
+        spk_data_out_shifted <= multiplied_sum >> 8;        
     end
 end
 
@@ -562,35 +565,9 @@ sample_rate_counter #(
     .sample_tick(sample_tick)
 );
 
-//Sample Adress Counter
-parameter OUD_BRAM_DEPTH  = 8192; // Number of samples per note
-parameter OUD_ADDR_WIDTH  = 13; //$clog2(BRAM_DEPTH);  // Address width (13 bits for 8192 depth)
-parameter OUD_BRAM_WIDTH = 16; // 16-bit sample width
+/
 
-logic [OUD_ADDR_WIDTH-1:0] sample_addr; // Current sample address
-
-
-sample_address_counter #(
-.BRAM_DEPTH(OUD_BRAM_DEPTH),
-.ADDR_WIDTH(OUD_ADDR_WIDTH)
-) sample_address_counter_inst (
-.clk_in(clk_100mhz),
-.rst_in(sys_rst),
-.sample_tick(sample_tick),
-.led(led[12]),
-.gate_in(gate_value[7:0]),
-.sample_addr(sample_addr)
-);
-
-
-
-
-// always_ff @( posedge clk_100mhz ) begin
-//     touch_status <= sw[7:0];
-// end
-
-
-//PWM Module Instantiation
+//PDM Module Instantiation
 logic spk_out;
 
 localparam PDM_RESOLUTION = 65536; 
@@ -604,7 +581,7 @@ pdm #(
     .clk_in(clk_100mhz),
     .rst_in(sys_rst),
     .dc_in(spk_data_out_shifted),
-    .gate_in(gate_value[7:0]),
+    .gate_in(gate_value_pipe),
     .sig_out(spk_out)
 );
 

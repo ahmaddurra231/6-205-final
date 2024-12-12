@@ -40,11 +40,9 @@ module note_decoder (
     //     end
     // endgenerate
 
-    assign gate_out = touch_status_in;
      
-    assign trigger_out = gate_out & ~gate_out_prev;
+   
     //assign trigger_out = debounced & ~debounced_prev;
-
 
 
     //  always_ff @(posedge clk_in) begin
@@ -59,28 +57,31 @@ module note_decoder (
     always_ff @(posedge clk_in) begin
         if (rst_in) begin
             gate_out_prev <= 24'b0;
+            gate_out <= 24'b0;
         end else begin
             gate_out_prev <= gate_out;
+            gate_out <= touch_status_in;
+            trigger_out <= gate_out & ~gate_out_prev;
         end
     end
 
     
-    // Note decoding logic
-    always_comb begin
-        // Default to no note
+    // // Note decoding logic
+    // always_comb begin
+    //     // Default to no note
 
-        case (touch_status_in)
-            24'b0000_0000_0000_0000_0000_0001: note_sel = 3'b000; // C4
-            24'b0000_0000_0000_0000_0000_0100: note_sel = 3'b010; // C4
-            24'b0000_0000_0000_0000_0000_0010: note_sel = 3'b001; // C4
-            24'b0000_0000_0000_0000_0000_1000: note_sel = 3'b011; // C4
-            24'b0000_0000_0000_0000_0001_0000: note_sel = 3'b100; // C4
-            24'b0000_0000_0000_0000_0010_0000: note_sel = 3'b101; // C4
-            24'b0000_0000_0000_0000_0100_0000: note_sel = 3'b110; // C4
-            24'b0000_0000_0000_0000_1000_0000: note_sel = 3'b111; // C4
-            default: note_sel = 3'd0; // No valid switch combination
-        endcase
+    //     case (touch_status_in)
+    //         24'b0000_0000_0000_0000_0000_0001: note_sel = 3'b000; // C4
+    //         24'b0000_0000_0000_0000_0000_0100: note_sel = 3'b010; // C4
+    //         24'b0000_0000_0000_0000_0000_0010: note_sel = 3'b001; // C4
+    //         24'b0000_0000_0000_0000_0000_1000: note_sel = 3'b011; // C4
+    //         24'b0000_0000_0000_0000_0001_0000: note_sel = 3'b100; // C4
+    //         24'b0000_0000_0000_0000_0010_0000: note_sel = 3'b101; // C4
+    //         24'b0000_0000_0000_0000_0100_0000: note_sel = 3'b110; // C4
+    //         24'b0000_0000_0000_0000_1000_0000: note_sel = 3'b111; // C4
+    //         default: note_sel = 3'd0; // No valid switch combination
+    //     endcase
 
-    end
+    // end
 
 endmodule

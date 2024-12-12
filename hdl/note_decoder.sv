@@ -58,7 +58,7 @@ module note_decoder (
     
     always_ff @(posedge clk_in) begin
         if (rst_in) begin
-            gate_out_prev <= 12'b0;
+            gate_out_prev <= 24'b0;
         end else begin
             gate_out_prev <= gate_out;
         end

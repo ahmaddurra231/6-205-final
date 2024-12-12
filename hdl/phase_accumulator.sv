@@ -3,8 +3,8 @@
 module phase_accumulator (
     input logic clk_in,                  // System clock
     input logic rst_in,                  // Reset signal
-    input logic [7:0] gate_in,
-    output logic [31:0] phase_value [7:0]   // Accumulated phase value output
+    input logic [23:0] gate_in,
+    output logic [31:0] phase_value [23:0]   // Accumulated phase value output
 );
   // Parameters for note values (e.g., MIDI note numbers or custom IDs)
   parameter NOTE_C4 = 8'd60;  // C4 (Middle C)
@@ -32,16 +32,34 @@ module phase_accumulator (
     phase_increment[5] = (gate_in[5]) ? 32'd18898 : 32'd0;  // A4 freq = 440.000 Hz
     phase_increment[6] = (gate_in[6]) ? 32'd21212 : 32'd0;  // B4 freq = 493.883 Hz
     phase_increment[7] = (gate_in[7]) ? 32'd22473 : 32'd0;  // C5 freq = 523.251 Hz
+
+    phase_increment[8]  = (gate_in[8])  ? 32'd11237 : 32'd0;  // C4 freq = 261.626 Hz
+    phase_increment[9]  = (gate_in[9])  ? 32'd12613 : 32'd0;  // D4 freq = 293.665 Hz
+    phase_increment[10] = (gate_in[10]) ? 32'd14157 : 32'd0;  // E4 freq = 329.628 Hz
+    phase_increment[11] = (gate_in[11]) ? 32'd14999 : 32'd0;  // F4 freq = 349.228 Hz
+    phase_increment[12] = (gate_in[12]) ? 32'd16836 : 32'd0;  // G4 freq = 391.995 Hz
+    phase_increment[13] = (gate_in[13]) ? 32'd18898 : 32'd0;  // A4 freq = 440.000 Hz
+    phase_increment[14] = (gate_in[14]) ? 32'd21212 : 32'd0;  // B4 freq = 493.883 Hz
+    phase_increment[15] = (gate_in[15]) ? 32'd22473 : 32'd0;  // C5 freq = 523.251 Hz
+
+    phase_increment[16] = (gate_in[16]) ? 32'd11237 : 32'd0;  // C4 freq = 261.626 Hz
+    phase_increment[17] = (gate_in[17]) ? 32'd12613 : 32'd0;  // D4 freq = 293.665 Hz
+    phase_increment[18] = (gate_in[18]) ? 32'd14157 : 32'd0;  // E4 freq = 329.628 Hz
+    phase_increment[19] = (gate_in[19]) ? 32'd14999 : 32'd0;  // F4 freq = 349.228 Hz
+    phase_increment[20] = (gate_in[20]) ? 32'd16836 : 32'd0;  // G4 freq = 391.995 Hz
+    phase_increment[21] = (gate_in[21]) ? 32'd18898 : 32'd0;  // A4 freq = 440.000 Hz
+    phase_increment[22] = (gate_in[22]) ? 32'd21212 : 32'd0;  // B4 freq = 493.883 Hz
+    phase_increment[23] = (gate_in[23]) ? 32'd22473 : 32'd0;  // C5 freq = 523.251 Hz
   end
   
   // Phase accumulator register
   always_ff @(posedge clk_in) begin
     if (rst_in) begin
-      for (int i = 0; i < 8; i++) begin
+      for (int i = 0; i < 24; i++) begin
           phase_value[i] <= 32'd0; // Reset phase value for all notes
       end
     end else begin
-      for (int i = 0; i < 8; i++) begin
+      for (int i = 0; i < 24; i++) begin
         if (gate_in[i]) begin
             // Accumulate phase only for active notes
             phase_value[i] <= phase_value[i] + phase_increment[i];

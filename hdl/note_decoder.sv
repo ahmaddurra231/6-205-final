@@ -21,7 +21,7 @@ module note_decoder (
     parameter NOTE_C5 = 8'd72;  // C5
 
     
-    logic [11:0] gate_out_prev;
+    logic [23:0] gate_out_prev;
 
     //YOU CAN COMMENT OUT THE DEBOUNCER LOGIC - IT'S ONLY USED FOR THE SWITCHES
 

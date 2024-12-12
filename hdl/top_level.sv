@@ -113,7 +113,7 @@ module top_level
    address_generator address_generator_inst(.clk_in(clk_100mhz), 
                                            .rst_in(sys_rst), 
                                            .phase_in(phase_value),
-                                           .gate_in(gate_value[7:0]),
+                                           .gate_in(gate_value[23:0]),
                                            .addr_out(note_addr),
                                            .num_voices(num_voices),
                                            .active_voices(active_voices), 

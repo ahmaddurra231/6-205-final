@@ -163,9 +163,9 @@ module adsr #(
                     state_next = launch;
                 end 
 
-                if (hold) begin
-                    state_next = sustain;
-                end
+                // if (hold) begin
+                //     state_next = sustain;
+                // end
 
 
                 //keep incrementing sustain_time counter till it's equal to sustain_time

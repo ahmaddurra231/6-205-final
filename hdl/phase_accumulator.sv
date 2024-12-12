@@ -18,7 +18,7 @@ module phase_accumulator (
 
 
   // Phase increment value - Adjusted according to the note value
-  logic [31:0] phase_increment [7:0];
+  logic [31:0] phase_increment [23:0];
 
   // Frequency to Phase Increment mapping (simplified)
 

@@ -3,10 +3,10 @@ module note_decoder (
     input logic clk_in,         // Clock input
     input logic rst_in,         // Reset input
     input logic [23:0] touch_status_in, // 12 touch_status_in to determine the note
-    input logic [11:0] switches, 
+    //input logic [11:0] switches, 
     output logic [23:0] gate_out,
     output logic [23:0] trigger_out,
-    output logic [2:0] note_sel //up to 8 notes
+    output logic [2:0] note_sel //up to 8 notes - this is for oud playback 
 );
 
     //NOTE TO SELF we could use these paramteres to claridy which note is being played

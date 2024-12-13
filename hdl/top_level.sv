@@ -25,8 +25,10 @@ module top_level
 
 
    logic [23:0]       touch_status;
+   logic [7:0]        control_pads;
    logic              valid_out; //uncomment for capacitors
    
+   assign led = touch_status[15:0];
 // uncomment for capacitors
    mpr121_controller mpr121_controller_inst(.clk_in(clk_100mhz), 
                                            .rst_in(sys_rst), 
@@ -34,7 +36,8 @@ module top_level
                                            .scl_out(pmodb_scl),
                                            .led(),
                                            .touch_status_out(touch_status),
-                                           .valid_out(valid_out)
+                                           .valid_out(valid_out), 
+                                           .control_out(control_pads)
                                           ); 
 
    logic [2:0]       note_sel;
@@ -109,13 +112,18 @@ module top_level
 
    // only using port a for reads: we only use dout
    logic [SINE_BRAM_WIDTH-1:0]  spk_data_out     [NUM_NOTES -1:0]; //changed this to hanlde 4 notes
+
+   logic [SINE_BRAM_WIDTH-1:0]  sine_spk_data_out [NUM_VOICES - 1:0];
+   logic [SINE_BRAM_WIDTH-1:0]  sawtooth_spk_data_out [NUM_VOICES - 1:0];
+   logic [SINE_BRAM_WIDTH-1:0]  square_spk_data_out [NUM_VOICES - 1:0];
    logic [SINE_ADDR_WIDTH-1:0]     note_addr   [NUM_NOTES - 1:0]; //changed this to handle 4 notes in parallel
    logic [SINE_ADDR_WIDTH-1:0] note_addr_logic [NUM_NOTES - 1:0];// logicister the sine_note_addr for BRAM addressing
    logic [3:0]  num_voices;
    logic [NUM_NOTES - 1:0] active_voices;
    logic [4:0] active_voices_idx [NUM_VOICES -1:0];
+   logic [4:0] active_voices_idx_pipe [NUM_VOICES -1:0];
 
-   assign led[4:0] = active_voices_idx[0];
+//    assign led[4:0] = active_voices_idx[0];
 //    assign led[15:8] = touch_status[23:16];
    
 
@@ -138,9 +146,15 @@ module top_level
             for (idx = 0; idx < NUM_NOTES; idx++) begin
                 note_addr_logic[idx] <= 0;
             end
+            for (idx = 0; idx < NUM_VOICES; idx++) begin
+                active_voices_idx_pipe[idx] <= 5'b11111;
+            end
         end else begin
             for (idx = 0; idx < NUM_NOTES; idx++) begin        
                 note_addr_logic[idx] <= note_addr[idx];     
+            end
+            for (idx = 0; idx < NUM_VOICES; idx++) begin
+                active_voices_idx_pipe[idx] <= active_voices_idx[idx];
             end
         end
     end
@@ -150,26 +164,26 @@ module top_level
 xilinx_true_dual_port_read_first_2_clock_ram
     #(.RAM_WIDTH(SINE_BRAM_WIDTH),
       .RAM_DEPTH(SINE_BRAM_DEPTH),
-      .INIT_FILE("../util/sawtooth_wave_256_uint16.hex")) sine_audio_bram
+      .INIT_FILE("../util/sine_wave_256_uint16.hex")) sine_audio_bram
       (
       // PORT A
-      .addra(note_addr_logic[0]),
+      .addra((active_voices_idx_pipe[0] == 5'b11111)? 0:note_addr_logic[active_voices_idx_pipe[0]]),
       .dina(0), // we only use port A for reads!
       .clka(clk_100mhz),
       .wea(1'b0), // read only
       .ena(1'b1),
       .rsta(sys_rst),
       .regcea(1'b1),
-      .douta(spk_data_out[0]),
+      .douta(sine_spk_data_out[0]),
       // PORT B
-      .addrb(note_addr_logic[1]),
+      .addrb((active_voices_idx_pipe[1] == 5'b11111)? 0:note_addr_logic[active_voices_idx_pipe[1]]),
       .dinb(0),
       .clkb(clk_100mhz),
       .web(1'b0),
       .enb(1'b1),
       .rstb(sys_rst),
       .regceb(1'b1),
-      .doutb(spk_data_out[1])
+      .doutb(sine_spk_data_out[1])
       );
 
     
@@ -179,23 +193,23 @@ xilinx_true_dual_port_read_first_2_clock_ram #(
     .INIT_FILE("../util/sine_wave_256_uint16.hex")
 ) sine_audio_bram1 (
     // PORT A
-    .addra(note_addr_logic[2]),
+    .addra((active_voices_idx_pipe[2] == 5'b11111)? 0:note_addr_logic[active_voices_idx_pipe[2]]),
     .dina(0),
     .clka(clk_100mhz),
     .wea(1'b0),
     .ena(1'b1),
     .rsta(sys_rst),
     .regcea(1'b1),
-    .douta(spk_data_out[2]),
+    .douta(sine_spk_data_out[2]),
     // PORT B
-    .addrb(note_addr_logic[3]),
+    .addrb((active_voices_idx_pipe[3] == 5'b11111)? 0:note_addr_logic[active_voices_idx_pipe[3]]),
     .dinb(0),
     .clkb(clk_100mhz),
     .web(1'b0),
     .enb(1'b1),
     .rstb(sys_rst),
     .regceb(1'b1),
-    .doutb(spk_data_out[3])
+    .doutb(sine_spk_data_out[3])
 );
 
 xilinx_true_dual_port_read_first_2_clock_ram #(
@@ -204,23 +218,23 @@ xilinx_true_dual_port_read_first_2_clock_ram #(
     .INIT_FILE("../util/sine_wave_256_uint16.hex")
 ) sine_audio_bram2 (
     // PORT A
-    .addra(note_addr_logic[4]),
+    .addra((active_voices_idx_pipe[4] == 5'b11111)? 0:note_addr_logic[active_voices_idx_pipe[4]]),
     .dina(0),
     .clka(clk_100mhz),
     .wea(1'b0),
     .ena(1'b1),
     .rsta(sys_rst),
     .regcea(1'b1),
-    .douta(spk_data_out[4]),
+    .douta(sine_spk_data_out[4]),
     // PORT B
-    .addrb(note_addr_logic[5]),
+    .addrb((active_voices_idx_pipe[5] == 5'b11111)? 0:note_addr_logic[active_voices_idx_pipe[5]]),
     .dinb(0),
     .clkb(clk_100mhz),
     .web(1'b0),
     .enb(1'b1),
     .rstb(sys_rst),
     .regceb(1'b1),
-    .doutb(spk_data_out[5])
+    .doutb(sine_spk_data_out[5])
 );
 
 xilinx_true_dual_port_read_first_2_clock_ram #(
@@ -229,23 +243,23 @@ xilinx_true_dual_port_read_first_2_clock_ram #(
     .INIT_FILE("../util/sine_wave_256_uint16.hex")
 ) sine_audio_bram3 (
     // PORT A
-    .addra(note_addr_logic[6]),
+    .addra((active_voices_idx_pipe[6] == 5'b11111)? 0:note_addr_logic[active_voices_idx_pipe[6]]),
     .dina(0),
     .clka(clk_100mhz),
     .wea(1'b0),
     .ena(1'b1),
     .rsta(sys_rst),
     .regcea(1'b1),
-    .douta(spk_data_out[6]),
+    .douta(sine_spk_data_out[6]),
     // PORT B
-    .addrb(note_addr_logic[7]),
+    .addrb((active_voices_idx_pipe[7] == 5'b11111)? 0:note_addr_logic[active_voices_idx_pipe[7]]),
     .dinb(0),
     .clkb(clk_100mhz),
     .web(1'b0),
     .enb(1'b1),
     .rstb(sys_rst),
     .regceb(1'b1),
-    .doutb(spk_data_out[7])
+    .doutb(sine_spk_data_out[7])
 );
 
 /////////////////////////////////////////////////////
@@ -261,23 +275,23 @@ xilinx_true_dual_port_read_first_2_clock_ram
     ) sawtooth_audio_bram
       (
       // PORT A
-      .addra(note_addr_logic[8]),
+      .addra((active_voices_idx_pipe[0] == 5'b11111)? 0:note_addr_logic[active_voices_idx_pipe[0]]),
       .dina(0), // we only use port A for reads!
       .clka(clk_100mhz),
       .wea(1'b0), // read only
       .ena(1'b1),
       .rsta(sys_rst),
       .regcea(1'b1),
-      .douta(spk_data_out[8]),
+      .douta(sawtooth_spk_data_out[0]),
       // PORT B
-      .addrb(note_addr_logic[9]),
+      .addrb((active_voices_idx_pipe[1] == 5'b11111)? 0:note_addr_logic[active_voices_idx_pipe[1]]),
       .dinb(0),
       .clkb(clk_100mhz),
       .web(1'b0),
       .enb(1'b1),
       .rstb(sys_rst),
       .regceb(1'b1),
-      .doutb(spk_data_out[9])
+      .doutb(sawtooth_spk_data_out[1])
       );
 
     
@@ -287,23 +301,23 @@ xilinx_true_dual_port_read_first_2_clock_ram #(
     .INIT_FILE("../util/sawtooth_wave_256_uint16.hex")
     ) sawtooth_audio_bram1 (
         // PORT A
-        .addra(note_addr_logic[10]),
+        .addra((active_voices_idx_pipe[2] == 5'b11111)? 0:note_addr_logic[active_voices_idx_pipe[2]]),
         .dina(0),
         .clka(clk_100mhz),
         .wea(1'b0),
         .ena(1'b1),
         .rsta(sys_rst),
         .regcea(1'b1),
-        .douta(spk_data_out[10]),
+        .douta(sawtooth_spk_data_out[2]),
         // PORT B
-        .addrb(note_addr_logic[11]),
+        .addrb((active_voices_idx_pipe[3] == 5'b11111)? 0:note_addr_logic[active_voices_idx_pipe[3]]),
         .dinb(0),
         .clkb(clk_100mhz),
         .web(1'b0),
         .enb(1'b1),
         .rstb(sys_rst),
         .regceb(1'b1),
-        .doutb(spk_data_out[11])
+        .doutb(sawtooth_spk_data_out[3])
     );
 
 xilinx_true_dual_port_read_first_2_clock_ram #(
@@ -312,23 +326,23 @@ xilinx_true_dual_port_read_first_2_clock_ram #(
     .INIT_FILE("../util/sawtooth_wave_256_uint16.hex")
     ) sawtooth_audio_bram2 (
         // PORT A
-        .addra(note_addr_logic[12]),
+        .addra((active_voices_idx_pipe[4] == 5'b11111)? 0:note_addr_logic[active_voices_idx_pipe[4]]),
         .dina(0),
         .clka(clk_100mhz),
         .wea(1'b0),
         .ena(1'b1),
         .rsta(sys_rst),
         .regcea(1'b1),
-        .douta(spk_data_out[12]),
+        .douta(sawtooth_spk_data_out[4]),
         // PORT B
-        .addrb(note_addr_logic[13]),
+        .addrb((active_voices_idx_pipe[5] == 5'b11111)? 0:note_addr_logic[active_voices_idx_pipe[5]]),
         .dinb(0),
         .clkb(clk_100mhz),
         .web(1'b0),
         .enb(1'b1),
         .rstb(sys_rst),
         .regceb(1'b1),
-        .doutb(spk_data_out[13])
+        .doutb(sawtooth_spk_data_out[5])
     );
 
 xilinx_true_dual_port_read_first_2_clock_ram #(
@@ -337,23 +351,23 @@ xilinx_true_dual_port_read_first_2_clock_ram #(
     .INIT_FILE("../util/sawtooth_wave_256_uint16.hex")
     ) sawtooth_audio_bram3 (
         // PORT A
-        .addra(note_addr_logic[14]),
+        .addra((active_voices_idx_pipe[6] == 5'b11111)? 0:note_addr_logic[active_voices_idx_pipe[6]]),
         .dina(0),
         .clka(clk_100mhz),
         .wea(1'b0),
         .ena(1'b1),
         .rsta(sys_rst),
         .regcea(1'b1),
-        .douta(spk_data_out[14]),
+        .douta(sawtooth_spk_data_out[6]),
         // PORT B
-        .addrb(note_addr_logic[15]),
+        .addrb((active_voices_idx_pipe[7] == 5'b11111)? 0:note_addr_logic[active_voices_idx_pipe[7]]),
         .dinb(0),
         .clkb(clk_100mhz),
         .web(1'b0),
         .enb(1'b1),
         .rstb(sys_rst),
         .regceb(1'b1),
-        .doutb(spk_data_out[15])
+        .doutb(sawtooth_spk_data_out[7])
     );
 
 
@@ -370,23 +384,23 @@ xilinx_true_dual_port_read_first_2_clock_ram
     ) square_audio_bram
       (
       // PORT A
-      .addra(note_addr_logic[0 + SQUARE_ADDR_OFFSET]),
+      .addra((active_voices_idx_pipe[0] == 5'b11111)? 0:note_addr_logic[active_voices_idx_pipe[0]]),
       .dina(0), // we only use port A for reads!
       .clka(clk_100mhz),
       .wea(1'b0), // read only
       .ena(1'b1),
       .rsta(sys_rst),
       .regcea(1'b1),
-      .douta(spk_data_out[0 + SQUARE_ADDR_OFFSET]),
+      .douta( square_spk_data_out[0]),
       // PORT B
-      .addrb(note_addr_logic[1 + SQUARE_ADDR_OFFSET]),
+      .addrb((active_voices_idx_pipe[1] == 5'b11111)? 0:note_addr_logic[active_voices_idx_pipe[1]]),
       .dinb(0),
       .clkb(clk_100mhz),
       .web(1'b0),
       .enb(1'b1),
       .rstb(sys_rst),
       .regceb(1'b1),
-      .doutb(spk_data_out[1 + SQUARE_ADDR_OFFSET])
+      .doutb( square_spk_data_out[1])
       );
     
 xilinx_true_dual_port_read_first_2_clock_ram #(
@@ -395,23 +409,23 @@ xilinx_true_dual_port_read_first_2_clock_ram #(
     .INIT_FILE("../util/square_wave_256_uint16.hex")
     ) square_audio_bram1 (
         // PORT A
-        .addra(note_addr_logic[2 + SQUARE_ADDR_OFFSET]),
+        .addra((active_voices_idx_pipe[2] == 5'b11111)? 0:note_addr_logic[active_voices_idx_pipe[2]]),
         .dina(0),
         .clka(clk_100mhz),
         .wea(1'b0),
         .ena(1'b1),
         .rsta(sys_rst),
         .regcea(1'b1),
-        .douta(spk_data_out[2 + SQUARE_ADDR_OFFSET]),
+        .douta( square_spk_data_out[2]),
         // PORT B
-        .addrb(note_addr_logic[3 + SQUARE_ADDR_OFFSET]),
+        .addrb((active_voices_idx_pipe[3] == 5'b11111)? 0:note_addr_logic[active_voices_idx_pipe[3]]),
         .dinb(0),
         .clkb(clk_100mhz),
         .web(1'b0),
         .enb(1'b1),
         .rstb(sys_rst),
         .regceb(1'b1),
-        .doutb(spk_data_out[3 + SQUARE_ADDR_OFFSET])
+        .doutb( square_spk_data_out[3])
     );
 
 xilinx_true_dual_port_read_first_2_clock_ram #(
@@ -420,23 +434,23 @@ xilinx_true_dual_port_read_first_2_clock_ram #(
     .INIT_FILE("../util/square_wave_256_uint16.hex")
     ) square_audio_bram2 (
         // PORT A
-        .addra(note_addr_logic[4 + SQUARE_ADDR_OFFSET]),
+        .addra((active_voices_idx_pipe[4] == 5'b11111)? 0:note_addr_logic[active_voices_idx_pipe[4]]),
         .dina(0),
         .clka(clk_100mhz),
         .wea(1'b0),
         .ena(1'b1),
         .rsta(sys_rst),
         .regcea(1'b1),
-        .douta(spk_data_out[4 + SQUARE_ADDR_OFFSET]),
+        .douta( square_spk_data_out[4]),
         // PORT B
-        .addrb(note_addr_logic[5 + SQUARE_ADDR_OFFSET]),
+        .addrb((active_voices_idx_pipe[5] == 5'b11111)? 0:note_addr_logic[active_voices_idx_pipe[5]]),
         .dinb(0),
         .clkb(clk_100mhz),
         .web(1'b0),
         .enb(1'b1),
         .rstb(sys_rst),
         .regceb(1'b1),
-        .doutb(spk_data_out[5 + SQUARE_ADDR_OFFSET])
+        .doutb( square_spk_data_out[5])
     );
 
 xilinx_true_dual_port_read_first_2_clock_ram #(
@@ -445,29 +459,35 @@ xilinx_true_dual_port_read_first_2_clock_ram #(
     .INIT_FILE("../util/square_wave_256_uint16.hex")
     ) square_audio_bram3 (
         // PORT A
-        .addra(note_addr_logic[6 + SQUARE_ADDR_OFFSET]),
+        .addra((active_voices_idx_pipe[6] == 5'b11111)? 0:note_addr_logic[active_voices_idx_pipe[6]]),
         .dina(0),
         .clka(clk_100mhz),
         .wea(1'b0),
         .ena(1'b1),
         .rsta(sys_rst),
         .regcea(1'b1),
-        .douta(spk_data_out[6 + SQUARE_ADDR_OFFSET]),
+        .douta( square_spk_data_out[6]),
         // PORT B
-        .addrb(note_addr_logic[7 + SQUARE_ADDR_OFFSET]),
+        .addrb((active_voices_idx_pipe[7] == 5'b11111)? 0:note_addr_logic[active_voices_idx_pipe[7]]),
         .dinb(0),
         .clkb(clk_100mhz),
         .web(1'b0),
         .enb(1'b1),
         .rstb(sys_rst),
         .regceb(1'b1),
-        .doutb(spk_data_out[7 + SQUARE_ADDR_OFFSET])
+        .doutb( square_spk_data_out[7])
     );
 
 //////////////////////////////////////////////////////////
 
 logic [5:0] note_count;
-logic [32:0] voice_values [0:7]; //change 32 back to 16
+logic [32:0] voice_values [7:0]; //change 32 back to 16
+logic [32:0] enveloped_voice_values_pipe [7:0];
+logic [16:0] enveloped_voice_values [7:0];
+// logic [32:0] sine_voice_values [7:0]; 
+// logic [32:0] sawtooth_voice_values [7:0];
+// logic [32:0] square_voice_values [7:0];
+
 
 
 integer v_idx;
@@ -482,12 +502,39 @@ end
 always_ff @(posedge clk_100mhz)begin
     for (v_idx = 0; v_idx < 8; v_idx = v_idx + 1) begin
         if (active_voices_idx[v_idx] < 5'b11111) begin
-            
 
-            voice_values[v_idx]  <= (spk_data_out[active_voices_idx[v_idx]] * adsr_envelope[active_voices_idx[v_idx]]) >> 16;
+             voice_values[v_idx]  <= (sine_spk_data_out[active_voices_idx[v_idx]] * adsr_envelope[active_voices_idx[v_idx]]) >> 16;
+            // sine_voice_values[v_idx] <= (sine_spk_data_out[v_idx] );
+            // sawtooth_voice_values[v_idx] <= (sawtooth_spk_data_out[v_idx] );
+            // square_voice_values[v_idx] <= (square_spk_data_out[v_idx] );
+
+            // case(sw[15:13])
+            //     3'b000: voice_values[v_idx] <= (sine_spk_data_out[v_idx] );
+            //     3'b001: voice_values[v_idx] <= (sawtooth_spk_data_out[v_idx] );
+            //     3'b010: voice_values[v_idx] <= (square_spk_data_out[v_idx] );
+
+            //     3'b011: voice_values[v_idx] <= (square_spk_data_out[v_idx] + sawtooth_spk_data_out[v_idx]) >> 1;
+            //     3'b100: voice_values[v_idx] <= (sine_spk_data_out[v_idx] + square_spk_data_out[v_idx]) >> 1;
+            //     3'b101: voice_values[v_idx] <= (sine_spk_data_out[v_idx] + sawtooth_spk_data_out[v_idx]) >> 1;
+            //     3'b110: voice_values[v_idx] <= (sine_spk_data_out[v_idx] + sawtooth_spk_data_out[v_idx] + square_spk_data_out[v_idx]) >> 2;
+            // endcase
+
             
+            // enveloped_voice_values_pipe[v_idx] <= voice_values[v_idx] * adsr_envelope[active_voices_idx[v_idx]] + 16'h8000;
+        
+
+            // enveloped_voice_values[v_idx] <= (enveloped_voice_values_pipe[v_idx][31:16] == 16'h0000) ? (enveloped_voice_values_pipe[idx][15:0]) : 16'hFFFF;
+
+
         end else begin
+            // voice_values[v_idx] <= 0;
+            // sine_voice_values[v_idx] <= 0;
+            // sawtooth_voice_values[v_idx] <= 0;
+            // square_voice_values[v_idx] <= 0;
+
             voice_values[v_idx] <= 0;
+            // enveloped_voice_values[v_idx] <= 0;
+            // enveloped_voice_values_pipe[v_idx] <= 0;
         end
     end
     

@@ -4,6 +4,7 @@ module mpr121_controller(
   inout logic sda,
   output logic scl_out,
   output logic [23:0] touch_status_out,
+  output logic [7:0] control_out,
   output logic [13:0] led,
   output logic valid_out
 );
@@ -43,11 +44,17 @@ module mpr121_controller(
     VERIFY_ECR,
     VERIFY_ECR_2,
     START_READ_TOUCH_STATUS,
-    READ_TOUCH_STATUS_FIRST_BYTE,
-    START_READ_SECOND_BYTE,
-    READ_TOUCH_STATUS_SECOND_BYTE, 
-    START_READ_THIRD_BYTE,
-    READ_TOUCH_STATUS_THIRD_BYTE,
+    READ_TOUCH_STATUS_FIRST_BYTE_D1,
+    START_READ_SECOND_BYTE_D1,
+    READ_TOUCH_STATUS_SECOND_BYTE_D1,
+    READ_CONTROLS_SECOND_BYTE_D1,
+    START_READ_FIRST_BYTE_D2,
+    READ_TOUCH_STATUS_FIRST_BYTE_D2,
+    START_READ_SECOND_BYTE_D2,
+    READ_CONTROLS_D2,
+    START_READ_FIRST_BYTE_D3,
+    READ_TOUCH_STATUS_FIRST_BYTE_D3,
+
     STOP
   } state_t;
 
@@ -182,34 +189,58 @@ module mpr121_controller(
           rw <= 1'b1; // Read operation
           command_byte_in <= 8'h00; // MPR121_TOUCH_STATUS register
           state <= AWAIT_VALID_OUT;
-          next_state <= READ_TOUCH_STATUS_FIRST_BYTE;
+          next_state <= READ_TOUCH_STATUS_FIRST_BYTE_D1;
           peripheral_addr_in <= 7'h5A;
         end
-        READ_TOUCH_STATUS_FIRST_BYTE: begin
+        READ_TOUCH_STATUS_FIRST_BYTE_D1: begin
           touch_status_out[7:0] <= data_byte_out;
-          state <= START_READ_SECOND_BYTE;
+          state <= START_READ_SECOND_BYTE_D1;
         end
-        START_READ_SECOND_BYTE: begin
+        START_READ_SECOND_BYTE_D1: begin
+          start <= 1'b1;
+          rw <= 1'b1; // Read operation
+          command_byte_in <= 8'h01; // MPR121_TOUCH_STATUS register
+          state <= AWAIT_VALID_OUT;
+          next_state <= READ_CONTROLS_SECOND_BYTE_D1;
+          peripheral_addr_in <= 7'h5A;
+        end
+        READ_CONTROLS_SECOND_BYTE_D1: begin
+          control_out[3:0] <= data_byte_out[3:0];
+          state <= START_READ_FIRST_BYTE_D2;
+        end
+        START_READ_FIRST_BYTE_D2: begin
           start <= 1'b1;
           rw <= 1'b1; // Read operation
           command_byte_in <= 8'h00; // MPR121_TOUCH_STATUS register
           state <= AWAIT_VALID_OUT;
-          next_state <= READ_TOUCH_STATUS_SECOND_BYTE;
+          next_state <= READ_TOUCH_STATUS_FIRST_BYTE_D2;
           peripheral_addr_in <= 7'h5B;
         end
-        READ_TOUCH_STATUS_SECOND_BYTE: begin
+        READ_TOUCH_STATUS_FIRST_BYTE_D2: begin
           touch_status_out[15:8] <= data_byte_out;
-          state <= START_READ_THIRD_BYTE;
+          state <= START_READ_SECOND_BYTE_D2;
         end
-        START_READ_THIRD_BYTE: begin
+        START_READ_SECOND_BYTE_D2: begin
+          start <= 1'b1;
+          rw <= 1'b1; // Read operation
+          command_byte_in <= 8'h01; // MPR121_TOUCH_STATUS register
+          state <= AWAIT_VALID_OUT;
+          next_state <= READ_CONTROLS_D2;
+          peripheral_addr_in <= 7'h5B;
+        end
+        READ_CONTROLS_D2: begin
+          control_out[7:4] <= data_byte_out[3:0];
+          state <= START_READ_FIRST_BYTE_D3;
+        end
+        START_READ_FIRST_BYTE_D3: begin
           start <= 1'b1;
           rw <= 1'b1; // Read operation
           command_byte_in <= 8'h00; // MPR121_TOUCH_STATUS register
           state <= AWAIT_VALID_OUT;
-          next_state <= READ_TOUCH_STATUS_THIRD_BYTE;
+          next_state <= READ_TOUCH_STATUS_FIRST_BYTE_D3;
           peripheral_addr_in <= 7'h5C;
         end
-        READ_TOUCH_STATUS_THIRD_BYTE: begin
+        READ_TOUCH_STATUS_FIRST_BYTE_D3: begin
           touch_status_out[23:16] <= data_byte_out;
           state <= START_READ_TOUCH_STATUS;
           valid_out <= 1'b1;

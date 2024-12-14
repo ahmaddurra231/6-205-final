@@ -150,7 +150,7 @@ module top_level
 xilinx_true_dual_port_read_first_2_clock_ram
     #(.RAM_WIDTH(SINE_BRAM_WIDTH),
       .RAM_DEPTH(SINE_BRAM_DEPTH),
-      .INIT_FILE("../util/sawtooth_wave_256_uint16.hex")) sine_audio_bram
+      .INIT_FILE("../util/sine_wave_256_uint16.hex")) sine_audio_bram
       (
       // PORT A
       .addra(note_addr_logic[0]),

@@ -25,17 +25,17 @@ module top_level
 
 
    logic [11:0]       touch_status;
-   //logic              valid_out; //uncomment for capacitors
+   logic              valid_out; //uncomment for capacitors
    
 // uncomment for capacitors
-//    mpr121_controller mpr121_controller_inst(.clk_in(clk_100mhz), 
-//                                            .rst_in(sys_rst), 
-//                                            .sda(pmodb_sda),
-//                                            .scl_out(pmodb_scl),
-//                                            .led(led[13:0]),
-//                                            .touch_status_out(touch_status),
-//                                            .valid_out(valid_out)
-//                                           ); 
+    mpr121_controller mpr121_controller_inst(.clk_in(clk_100mhz), 
+                                            .rst_in(sys_rst), 
+                                            .sda(pmodb_sda),
+                                            .scl_out(pmodb_scl),
+                                            .led(led[13:0]),
+                                            .touch_status_out(touch_status),
+                                            .valid_out(valid_out)
+                                           ); 
 
    logic [2:0]       note_sel;
    logic [11:0]      gate_value;
